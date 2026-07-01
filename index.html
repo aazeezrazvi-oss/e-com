@@ -39,6 +39,12 @@
           </svg>
           <span class="cart-badge" id="cart-count">0</span>
         </button>
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-btn" id="mobile-menu-trigger" aria-label="Open Navigation Menu">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
@@ -159,6 +165,22 @@
       <p>Elevating Standard Retail.</p>
     </div>
   </footer>
+
+  <!-- MOBILE MENU DRAWER -->
+  <div class="drawer-overlay" id="mobile-menu-overlay"></div>
+  <div class="drawer drawer-left" id="mobile-menu-drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Navigation</h3>
+      <button class="drawer-close" id="mobile-menu-close" aria-label="Close Menu">&times;</button>
+    </div>
+    <div style="padding: 30px;">
+      <ul class="mobile-nav-list">
+        <li><a href="#hero" class="mobile-nav-link" id="mob-nav-home">Home</a></li>
+        <li><a href="#catalog" class="mobile-nav-link" id="mob-nav-catalog">Catalog</a></li>
+        <li><a href="#about" class="mobile-nav-link" id="mob-nav-about">Philosophy</a></li>
+      </ul>
+    </div>
+  </div>
 
   <!-- SIDE DRAWER: SHOPPING CART -->
   <div class="drawer-overlay" id="cart-overlay"></div>

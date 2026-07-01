@@ -37,6 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const mainHeader = document.getElementById("main-header");
   const logoDisplayContainer = document.getElementById("logo-display-container");
   const footerCategoriesList = document.getElementById("footer-categories-list");
+  
+  // Mobile Navigation Menu Elements
+  const mobileMenuTrigger = document.getElementById("mobile-menu-trigger");
+  const mobileMenuClose = document.getElementById("mobile-menu-close");
+  const mobileMenuDrawer = document.getElementById("mobile-menu-drawer");
+  const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
+  const mobileNavLinks = document.querySelectorAll(".mobile-nav-link");
 
   // Elements - Social Links
   const footerLinkInsta = document.getElementById("footer-link-insta");
@@ -364,6 +371,34 @@ document.addEventListener("DOMContentLoaded", () => {
   cartClose.addEventListener("click", closeCartDrawer);
   cartOverlay.addEventListener("click", closeCartDrawer);
 
+  // Mobile Menu Drawer Toggles
+  function openMobileMenu() {
+    if (mobileMenuDrawer) mobileMenuDrawer.classList.add("open");
+    if (mobileMenuOverlay) mobileMenuOverlay.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeMobileMenu() {
+    if (mobileMenuDrawer) mobileMenuDrawer.classList.remove("open");
+    if (mobileMenuOverlay) mobileMenuOverlay.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  if (mobileMenuTrigger) mobileMenuTrigger.addEventListener("click", openMobileMenu);
+  if (mobileMenuClose) mobileMenuClose.addEventListener("click", closeMobileMenu);
+  if (mobileMenuOverlay) mobileMenuOverlay.addEventListener("click", closeMobileMenu);
+
+  // Close mobile drawer when clicking navigation links
+  mobileNavLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      closeMobileMenu();
+      
+      // Update active styling
+      mobileNavLinks.forEach(l => l.classList.remove("active"));
+      link.classList.add("active");
+    });
+  });
+
   // Quick View Modal
   function openQuickView(productId) {
     const product = products.find(p => p.id === productId);
@@ -536,4 +571,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 5000);
     }, duration);
   }
+
+  // Background Sync from Cloud
+  async function performBackgroundSync() {
+    const cloudData = await fetchCloudCatalog();
+    if (cloudData) {
+      products = getProducts();
+      categories = getCategories();
+      renderFilters();
+      renderProducts();
+      console.log("Storefront catalog synced from cloud.");
+    }
+  }
+  performBackgroundSync();
 });

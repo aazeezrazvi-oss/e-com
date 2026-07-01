@@ -62,6 +62,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const exportCatalogBtn = document.getElementById("export-catalog-btn");
   const importCatalogInput = document.getElementById("import-catalog-input");
 
+  // Elements - Cloud Sync
+  const cloudSyncForm = document.getElementById("cloud-sync-form");
+  const syncBinIdInput = document.getElementById("sync-bin-id");
+  const syncApiKeyInput = document.getElementById("sync-api-key");
+  const disconnectSyncBtn = document.getElementById("disconnect-sync-btn");
+
   // Elements - Order Logs & Stats
   const ordersLogContainer = document.getElementById("orders-log-container");
   const clearOrdersBtn = document.getElementById("clear-orders-btn");
@@ -208,6 +214,18 @@ document.addEventListener("DOMContentLoaded", () => {
       clearLogoBtn.style.display = "none";
       if (faviconEl) faviconEl.href = "logo.png";
     }
+
+    // Cloud Sync config preview
+    const syncConfig = JSON.parse(localStorage.getItem("dvgcart_sync_config"));
+    if (syncConfig) {
+      syncBinIdInput.value = syncConfig.binId || "";
+      syncApiKeyInput.value = syncConfig.apiKey || "";
+      disconnectSyncBtn.style.display = "inline-block";
+    } else {
+      syncBinIdInput.value = "";
+      syncApiKeyInput.value = "";
+      disconnectSyncBtn.style.display = "none";
+    }
   }
 
   // 3. PRODUCT CRUD AND TABLE DRAWING
@@ -282,6 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderProductsTable();
       updateStats();
       showToast(`Removed "${product.title}" from catalog.`);
+      syncAdminCatalog();
     }
   }
 
@@ -429,6 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderProductsTable();
     updateStats();
     closeProductModal();
+    syncAdminCatalog();
   });
 
   // 5. ADMINISTRATIVE SETTINGS FORM SUBMITS
@@ -501,6 +521,43 @@ document.addEventListener("DOMContentLoaded", () => {
     initAdminLogo();
   });
 
+  // Handle Cloud Sync Form Submit
+  cloudSyncForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const binId = syncBinIdInput.value.trim();
+    const apiKey = syncApiKeyInput.value.trim();
+
+    if (!binId || !apiKey) {
+      showToast("Both Bin ID and API Key are required.", true);
+      return;
+    }
+
+    localStorage.setItem("dvgcart_sync_config", JSON.stringify({ binId, apiKey }));
+    disconnectSyncBtn.style.display = "inline-block";
+    showToast("Connecting to cloud vault...", false);
+
+    const products = getProducts();
+    const categories = getCategories();
+    
+    const success = await saveCloudCatalog(products, categories);
+    if (success) {
+      showToast("Connected & synced catalog with cloud!");
+    } else {
+      showToast("Connected config, but initial sync failed. Verify credentials.", true);
+    }
+  });
+
+  // Handle Disconnect Sync
+  disconnectSyncBtn.addEventListener("click", () => {
+    if (confirm("Are you sure you want to disconnect cloud synchronization? Your catalog will fall back to local storage.")) {
+      localStorage.removeItem("dvgcart_sync_config");
+      syncBinIdInput.value = "";
+      syncApiKeyInput.value = "";
+      disconnectSyncBtn.style.display = "none";
+      showToast("Cloud sync disconnected.");
+    }
+  });
+
   // --- Category Management Logic ---
   function renderCategoryList() {
     const categories = getCategories();
@@ -558,6 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderCategoryList();
       populateCategoryDropdown();
       showToast(`Category "${categoryName}" deleted.`);
+      syncAdminCatalog();
     }
   }
 
@@ -585,6 +643,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCategoryList();
     populateCategoryDropdown();
     showToast(`Category "${formattedCat}" created.`);
+    syncAdminCatalog();
   });
 
   // 6. BACKUP SYSTEMS (IMPORT/EXPORT JSON)
@@ -629,6 +688,7 @@ document.addEventListener("DOMContentLoaded", () => {
             updateStats();
             importCatalogInput.value = "";
             showToast("Successfully imported catalog file!");
+            syncAdminCatalog();
           } else {
             showToast("Invalid JSON schema. Missing required product fields.", true);
           }
@@ -728,5 +788,22 @@ document.addEventListener("DOMContentLoaded", () => {
         toast.remove();
       }, 5000);
     }, 3000);
+  }
+
+  // Cloud Sync trigger function for CRUD operations
+  async function syncAdminCatalog() {
+    const products = getProducts();
+    const categories = getCategories();
+    
+    const syncConfig = localStorage.getItem("dvgcart_sync_config");
+    if (!syncConfig) return;
+    
+    showToast("Syncing changes with cloud...");
+    const success = await saveCloudCatalog(products, categories);
+    if (success) {
+      showToast("Cloud sync completed.");
+    } else {
+      showToast("Cloud sync failed. Check settings.", true);
+    }
   }
 });
