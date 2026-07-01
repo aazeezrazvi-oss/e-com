@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DvgCart | Admin Dashboard Panel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" id="tab-favicon" href="logo.png" type="image/png">
+  <style>
+    /* Admin specific overrides */
+    .admin-logo-text {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      letter-spacing: 2px;
+    }
+    .admin-logo-text span {
+      color: var(--color-accent);
+    }
+  </style>
+</head>
+<body class="admin-body">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ADMIN PASS GATE -->
+  <div id="login-container">
+    <div class="login-card">
+      <h2 class="login-title serif">DvgCart Portal</h2>
+      <p class="login-subtitle">Boutique Administration Gate</p>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="admin-pass">Secure Passcode</label>
+          <input type="password" id="admin-pass" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-luxury" style="width: 100%; margin-top: 10px;">Authenticate Session</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN MAIN INTERFACE (Hidden by default until login) -->
+  <div id="admin-dashboard" style="display: none;">
+    <!-- HEADER -->
+    <header class="admin-header">
+      <div class="logo">
+        <div class="admin-logo-text" id="admin-logo-display-container">DVG<span>CART</span> <small style="font-size: 10px; letter-spacing: 1px; color: var(--color-text-muted); text-transform: uppercase;">Admin Portal</small></div>
+      </div>
+      <div class="admin-nav-actions">
+        <a href="index.html" class="btn-luxury-outline" style="padding: 8px 16px; font-size: 11px;">Return to Shop</a>
+        <button id="logout-btn" class="admin-btn">Terminate Session</button>
+      </div>
+    </header>
+
+    <!-- CONTENT CONTAINER -->
+    <main class="admin-container">
+      
+      <!-- ANALYTICS CARDS -->
+      <section class="analytics-row">
+        <div class="analytics-card">
+          <div class="analytics-label">Boutique Revenue</div>
+          <div class="analytics-value" id="stat-revenue">$0</div>
+          <div class="analytics-trend">↑ 100% organic checkout</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-label">Acquisitions Transmitted</div>
+          <div class="analytics-value" id="stat-orders">0</div>
+          <div class="analytics-trend" style="color: var(--color-accent);">Via WhatsApp Direct</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-label">Active Collection</div>
+          <div class="analytics-value" id="stat-products">0 Items</div>
+          <div class="analytics-trend">Fully editable catalog</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-label">VIP Clientele</div>
+          <div class="analytics-value" id="stat-clients">0 Clients</div>
+          <div class="analytics-trend">Registered locally</div>
+        </div>
+      </section>
+
+      <div class="admin-grid">
+        <!-- COLUMN 1: CATALOG LISTING -->
+        <section class="admin-panel">
+          <div class="admin-panel-header">
+            <h2 class="admin-panel-title serif">Manage Products</h2>
+            <button id="add-product-trigger" class="btn-luxury" style="padding: 10px 20px; font-size: 11px;">Add Creation</button>
+          </div>
+          
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-products-table-body">
+                <!-- Products will be dynamically populated here -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TWO COLUMN LAYOUT FOR CONFIGS AND LOGS -->
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; margin-top: 40px;">
+          
+          <!-- PORTAL CONFIGURATION -->
+          <section class="admin-panel">
+            <div class="admin-panel-header">
+              <h2 class="admin-panel-title serif">Admin Settings</h2>
+            </div>
+            
+            <!-- WhatsApp Phone Config -->
+            <form id="settings-phone-form" style="margin-bottom: 30px;">
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">WhatsApp Configuration</h3>
+              <div class="form-group">
+                <label class="form-label" for="set-phone">Admin Contact Number (With Country Code)</label>
+                <input type="text" id="set-phone" class="form-control" placeholder="e.g. 18008008800" required>
+                <small style="color: var(--color-text-muted); font-size: 11px; margin-top: 5px; display: block;">Do not add spaces, '+' signs, or parenthesis (e.g., 919876543210 for India, 15550192834 for USA).</small>
+              </div>
+              <button type="submit" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px;">Update Number</button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
+
+            <!-- Passcode Config -->
+            <form id="settings-pass-form" style="margin-bottom: 30px;">
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Change Passcode</h3>
+              <div class="form-group">
+                <label class="form-label" for="set-pass">New Secure Passcode</label>
+                <input type="password" id="set-pass" class="form-control" placeholder="••••••••" required>
+              </div>
+              <button type="submit" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px;">Save Passcode</button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
+
+            <!-- Social Links Config -->
+            <form id="settings-socials-form" style="margin-bottom: 30px;">
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Social Media Links</h3>
+              <div class="form-group">
+                <label class="form-label" for="set-insta">Instagram Link</label>
+                <input type="url" id="set-insta" class="form-control" placeholder="https://instagram.com/username">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="set-fb">Facebook Link</label>
+                <input type="url" id="set-fb" class="form-control" placeholder="https://facebook.com/page">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="set-yt">YouTube Channel Link</label>
+                <input type="url" id="set-yt" class="form-control" placeholder="https://youtube.com/channel">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="set-wa">Custom WhatsApp Footer Link (Optional)</label>
+                <input type="url" id="set-wa" class="form-control" placeholder="https://wa.me/18008008800">
+                <small style="color: var(--color-text-muted); font-size: 11px; margin-top: 5px; display: block;">If left empty, this will automatically link using the Admin Contact Number above.</small>
+              </div>
+              <button type="submit" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px;">Update Social Links</button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
+
+            <!-- Category Management -->
+            <div style="margin-bottom: 30px;">
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Manage Categories</h3>
+              
+              <!-- Form to Add Category -->
+              <form id="add-category-form" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="new-category-name" class="form-control" placeholder="e.g. Fine Jewelry" required style="padding: 8px 12px; font-size: 13px;">
+                <button type="submit" class="btn-luxury" style="padding: 8px 16px; font-size: 11px; white-space: nowrap;">Add</button>
+              </form>
+
+              <!-- Category List container -->
+              <div id="admin-category-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.05); background-color: rgba(255, 255, 255, 0.01);">
+                <!-- Categories list with delete button will be populated dynamically -->
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
+
+            <!-- Custom Logo Config -->
+            <div style="margin-bottom: 30px;">
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Brand Customization</h3>
+              <div class="form-group">
+                <label class="form-label">Shop Logo (logo.png)</label>
+                <div class="file-upload-wrapper">
+                  <button class="btn-file-upload">Choose Custom Image</button>
+                  <input type="file" id="logo-file-input" class="file-upload-input" accept="image/*">
+                </div>
+                <div class="image-preview-box" id="logo-preview-box"></div>
+                <small style="color: var(--color-text-muted); font-size: 11px; margin-top: 5px; display: block;">Upload a PNG logo. It will replace the default text logo across the website immediately.</small>
+              </div>
+              <button id="clear-logo-btn" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px; border-color: #d32f2f; color: #d32f2f; display: none;">Clear Custom Logo</button>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
+
+            <!-- Catalog Backup/Restore -->
+            <div>
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Backup & Portability</h3>
+              <p style="color: var(--color-text-muted); font-size: 12px; margin-bottom: 20px; font-weight: 300;">Export your catalog as a JSON backup or import it onto another device. To make your additions permanent for all customers globally, copy the exported JSON content into the `js/products.js` file.</p>
+              
+              <div style="display: flex; gap: 15px;">
+                <button id="export-catalog-btn" class="btn-luxury" style="padding: 10px 20px; font-size: 11px; flex: 1;">Export Catalog</button>
+                <div class="file-upload-wrapper" style="flex: 1;">
+                  <button class="btn-file-upload" style="padding: 10px 20px; width: 100%;">Import Catalog</button>
+                  <input type="file" id="import-catalog-input" class="file-upload-input" accept=".json">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- RECENT ORDERS LOG -->
+          <section class="admin-panel">
+            <div class="admin-panel-header">
+              <h2 class="admin-panel-title serif">Acquisition Logs</h2>
+              <button id="clear-orders-btn" class="btn-text-luxury" style="color: #e53935; border-color: rgba(229, 57, 53, 0.3);">Clear Logs</button>
+            </div>
+            
+            <div id="orders-log-container" style="max-height: 700px; overflow-y: auto;">
+              <!-- Orders list will be populated dynamically -->
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PRODUCT -->
+  <div class="modal" id="product-modal">
+    <div class="modal-container" style="max-width: 600px; padding: 40px;">
+      <button class="modal-close-btn" id="product-modal-close" aria-label="Close Modal">&times;</button>
+      <h3 class="checkout-title serif" id="product-modal-title">Add New Creation</h3>
+      
+      <form id="product-form">
+        <input type="hidden" id="prod-form-id">
+        
+        <div class="form-group">
+          <label class="form-label" for="prod-title">Title</label>
+          <input type="text" id="prod-title" class="form-control" placeholder="e.g. Royal Oak Platinum" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="form-group">
+            <label class="form-label" for="prod-category">Category</label>
+            <select id="prod-category" class="form-control" required style="appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=%22%23D4AF37%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/><path d=%22M0 0h24v24H0z%22 fill=%22none%22/></svg>'); background-repeat: no-repeat; background-position: right 10px center;">
+              <!-- Categories injected -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="prod-price">Retail Price ($)</label>
+            <input type="number" id="prod-price" class="form-control" placeholder="e.g. 45000" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prod-desc">Description</label>
+          <textarea id="prod-desc" class="form-control" placeholder="Detailed marketing copy..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Product Image</label>
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start;">
+            <div>
+              <div class="file-upload-wrapper" style="width: 100%;">
+                <button type="button" class="btn-file-upload">Upload Product Image</button>
+                <input type="file" id="prod-image-file" class="file-upload-input" accept="image/*">
+              </div>
+              <p style="text-align: center; color: var(--color-text-muted); font-size: 11px; margin: 8px 0;">- OR -</p>
+              <input type="text" id="prod-image-url" class="form-control" placeholder="e.g. images/watch.png (Image Path)">
+            </div>
+            <div>
+              <div class="image-preview-box" id="prod-image-preview" style="width: 100%; height: 130px; margin-top: 0;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prod-specs">Specifications (One per line)</label>
+          <textarea id="prod-specs" class="form-control" placeholder="e.g. Case: 18k Rose Gold, 42mm&#10;Movement: Automatic Calibre" style="min-height: 80px;"></textarea>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+          <input type="checkbox" id="prod-featured" style="width: 18px; height: 18px; accent-color: var(--color-accent);">
+          <label class="form-label" for="prod-featured" style="margin-bottom: 0; cursor: pointer;">Featured in Shop Hero Banner</label>
+        </div>
+
+        <button type="submit" class="btn-luxury" style="width: 100%; margin-top: 25px;" id="prod-form-submit-btn">Save Product</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT SCRIPTS -->
+  <script src="js/products.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

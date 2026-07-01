@@ -1,0 +1,18 @@
+{
+  "name": "dvgcart-luxury-shop",
+  "version": "1.0.0",
+  "description": "DvgCart - Haute Couture & Luxury Retail E-commerce Shop with WhatsApp Checkout & Admin Panel (No Database)",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server ./ -p 3000 -o",
+    "dev": "npx http-server ./ -p 3000 -o"
+  },
+  "keywords": [
+    "luxury",
+    "e-commerce",
+    "whatsapp-checkout",
+    "no-database"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}
