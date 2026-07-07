@@ -2,6 +2,8 @@
  * DvgCart E-Commerce - Product Catalog Seed
  */
 
+const CLOUD_BIN_ID = "6a4d2328da38895dfe3b8cec";
+
 const DEFAULT_PRODUCTS = [
   {
     id: "prod-001",
@@ -79,21 +81,29 @@ function saveCategories(categories) {
   localStorage.setItem("dvgcart_categories_v4", JSON.stringify(categories));
 }
 
-/**
- * Fetch catalog from Cloud Sync (JSONBin API)
- */
 async function fetchCloudCatalog() {
   const syncConfig = JSON.parse(localStorage.getItem("dvgcart_sync_config"));
-  if (!syncConfig || !syncConfig.apiKey || !syncConfig.binId) {
+  let binId = "";
+  let apiKey = "";
+
+  if (syncConfig && syncConfig.binId) {
+    binId = syncConfig.binId;
+    apiKey = syncConfig.apiKey;
+  } else if (typeof CLOUD_BIN_ID !== "undefined" && CLOUD_BIN_ID) {
+    binId = CLOUD_BIN_ID;
+  }
+
+  if (!binId) {
     return null;
   }
   
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${syncConfig.binId}/latest`, {
-      headers: {
-        "X-Master-Key": syncConfig.apiKey
-      }
-    });
+    const headers = {};
+    if (apiKey) {
+      headers["X-Master-Key"] = apiKey;
+    }
+
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers });
     if (!res.ok) throw new Error("Failed to fetch cloud catalog");
     const json = await res.json();
     

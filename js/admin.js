@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<span style="color: var(--color-text-muted); font-size: 12px;">Standard Listing</span>`;
 
       tr.innerHTML = `
-        <td>
+        <td data-label="Product">
           <div class="table-product-cell">
             <img src="${p.image}" alt="${p.title}" class="table-product-thumb" onerror="this.src='images/watch.png'">
             <div>
@@ -261,10 +261,10 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
         </td>
-        <td><span class="badge-category">${p.category}</span></td>
-        <td><strong style="color: var(--color-accent);">${priceFormatted}</strong></td>
-        <td>${statusHTML}</td>
-        <td>
+        <td data-label="Category"><span class="badge-category">${p.category}</span></td>
+        <td data-label="Price"><strong style="color: var(--color-accent);">${priceFormatted}</strong></td>
+        <td data-label="Status">${statusHTML}</td>
+        <td data-label="Actions">
           <button class="btn-icon-action edit-product-btn" data-id="${p.id}" title="Edit product">Edit</button>
           <button class="btn-icon-action delete delete-product-btn" data-id="${p.id}" title="Delete product">&times; Delete</button>
         </td>
