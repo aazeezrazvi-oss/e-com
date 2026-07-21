@@ -54,8 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize
   initLogo();
   initSocialLinks();
-  renderFilters();
-  renderProducts("all");
+  
+  const isSupabaseConfigured = typeof db !== "undefined" && db !== null;
+  if (!isSupabaseConfigured) {
+    renderFilters();
+    renderProducts("all");
+  }
+  
   updateCartUI();
   initHeaderScroll();
 
@@ -164,16 +169,57 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let activeCategory = "all";
+  const catalogSearchInput = document.getElementById("catalog-search");
+
+  if (catalogSearchInput) {
+    catalogSearchInput.addEventListener("input", () => {
+      renderProducts();
+    });
+  }
+
   // Render Products Grid
   function renderProducts(filterCategory) {
+    if (filterCategory !== undefined) {
+      activeCategory = filterCategory;
+    }
+
     productsGrid.innerHTML = "";
     
     // Refresh products in case they changed in admin
-    products = getProducts();
+    try {
+      products = getProducts();
+      if (!Array.isArray(products)) {
+        products = [];
+      }
+    } catch (e) {
+      console.error("Failed to load products from cache:", e);
+      products = [];
+    }
     
-    const filtered = filterCategory === "all" 
-      ? products 
-      : products.filter(p => p.category.toLowerCase() === filterCategory.toLowerCase());
+    let filtered = [];
+    try {
+      filtered = activeCategory === "all" 
+        ? products 
+        : products.filter(p => p && p.category && String(p.category).toLowerCase() === activeCategory.toLowerCase());
+    } catch (e) {
+      console.error("Filter category error:", e);
+      filtered = products || [];
+    }
+
+    const searchTerm = catalogSearchInput ? catalogSearchInput.value.toLowerCase().trim() : "";
+    if (searchTerm) {
+      filtered = filtered.filter(p => {
+        if (!p) return false;
+        const titleMatch = p.title ? String(p.title).toLowerCase().includes(searchTerm) : false;
+        const descMatch = p.description ? String(p.description).toLowerCase().includes(searchTerm) : false;
+        const catMatch = p.category ? String(p.category).toLowerCase().includes(searchTerm) : false;
+        const specsMatch = p.specs && Array.isArray(p.specs) 
+          ? p.specs.some(spec => spec && String(spec).toLowerCase().includes(searchTerm)) 
+          : false;
+        return titleMatch || descMatch || catMatch || specsMatch;
+      });
+    }
 
     if (filtered.length === 0) {
       productsGrid.innerHTML = `
@@ -186,16 +232,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     filtered.forEach(product => {
+      if (!product) return;
       const card = document.createElement("div");
       card.className = "product-card";
       
       const badgeHTML = product.featured ? `<span class="product-card-badge">Exclusive</span>` : "";
-      const priceFormatted = product.price.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+      
+      const priceVal = typeof product.price === "number" ? product.price : parseFloat(product.price) || 0;
+      const priceFormatted = priceVal.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
       card.innerHTML = `
         <div class="product-card-img-container">
           ${badgeHTML}
-          <img src="${product.image}" alt="${product.title}" class="product-card-img" onerror="this.src='images/watch.png'">
+          <img src="${product.image || 'images/watch.png'}" alt="${product.title || 'Product'}" class="product-card-img" onerror="this.src='images/watch.png'">
           <div class="product-card-overlay">
             <button class="action-circle-btn quickview-action" data-id="${product.id}" aria-label="Quick View">
               <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -206,9 +255,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
         <div class="product-card-info">
-          <span class="product-card-category">${product.category}</span>
-          <h3 class="product-card-title">${product.title}</h3>
-          <p class="product-card-desc">${product.description}</p>
+          <span class="product-card-category">${product.category || 'Creations'}</span>
+          <h3 class="product-card-title">${product.title || 'No Title'}</h3>
+          <p class="product-card-desc">${product.description || ''}</p>
           <div class="product-card-footer">
             <span class="product-card-price">${priceFormatted}</span>
             <button class="btn-text-luxury quickview-text-action" data-id="${product.id}">Details</button>
@@ -290,6 +339,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateCartUI() {
     // Total quantity badge
     const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+    
+    if (cartCount.textContent !== String(totalQty) && totalQty > 0) {
+      cartCount.classList.add("cart-bounce-anim");
+      setTimeout(() => {
+        cartCount.classList.remove("cart-bounce-anim");
+      }, 400);
+    }
+
     cartCount.textContent = totalQty;
     cartSummaryQty.textContent = totalQty;
 
@@ -576,11 +633,25 @@ document.addEventListener("DOMContentLoaded", () => {
   async function performBackgroundSync() {
     const cloudData = await fetchCloudCatalog();
     if (cloudData) {
-      products = getProducts();
-      categories = getCategories();
+      try {
+        products = getProducts();
+        categories = getCategories();
+      } catch (e) {
+        console.error("Cache parsing failed after cloud sync:", e);
+      }
       renderFilters();
       renderProducts();
       console.log("Storefront catalog synced from cloud.");
+    } else {
+      // Fallback to local catalog if sync fails or times out
+      try {
+        products = getProducts();
+        categories = getCategories();
+      } catch (e) {
+        console.error("Cache parsing failed during offline fallback:", e);
+      }
+      renderFilters();
+      renderProducts();
     }
   }
   performBackgroundSync();

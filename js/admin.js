@@ -3,6 +3,67 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Helper to compress base64 images to prevent 413 Content Too Large errors on JSONBin
+  function compressBase64Image(base64Str, maxWidth = 600, maxHeight = 600, quality = 0.7) {
+    return new Promise((resolve) => {
+      if (!base64Str || !base64Str.startsWith("data:image")) {
+        resolve(base64Str);
+        return;
+      }
+      
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(compressedDataUrl);
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+      img.src = base64Str;
+    });
+  }
+
+  // One-time compression of old heavy base64 products
+  async function optimizeExistingProductImages() {
+    let products = getProducts();
+    let updated = false;
+    for (let i = 0; i < products.length; i++) {
+      if (products[i].image && products[i].image.startsWith("data:image") && products[i].image.length > 50000) {
+        showToast(`Optimizing existing catalog image: ${products[i].title}...`, false);
+        products[i].image = await compressBase64Image(products[i].image, 600, 600, 0.7);
+        updated = true;
+      }
+    }
+    if (updated) {
+      saveProducts(products);
+      renderProductsTable();
+      updateStats();
+      syncAdminCatalog(); // Push optimized catalog to cloud automatically
+    }
+  }
+
   // Authentication State
   let isAuthenticated = sessionStorage.getItem("dvgcart_admin_session") === "active";
   const defaultPasscode = "luxuryadmin";
@@ -62,11 +123,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const exportCatalogBtn = document.getElementById("export-catalog-btn");
   const importCatalogInput = document.getElementById("import-catalog-input");
 
-  // Elements - Cloud Sync
-  const cloudSyncForm = document.getElementById("cloud-sync-form");
-  const syncBinIdInput = document.getElementById("sync-bin-id");
-  const syncApiKeyInput = document.getElementById("sync-api-key");
-  const disconnectSyncBtn = document.getElementById("disconnect-sync-btn");
+  // Elements - Supabase DB Sync Settings
+  const supabaseSyncForm = document.getElementById("supabase-sync-form");
+  const supabaseUrlInput = document.getElementById("supabase-url");
+  const supabaseAnonKeyInput = document.getElementById("supabase-anon-key");
+  const clearDbBtn = document.getElementById("clear-db-btn");
+  const dbStatusDot = document.getElementById("db-status-dot");
+  const dbStatusText = document.getElementById("db-status-text");
 
   // Elements - Order Logs & Stats
   const ordersLogContainer = document.getElementById("orders-log-container");
@@ -91,19 +154,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  loginForm.addEventListener("submit", (e) => {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const enteredPass = adminPassInput.value;
     const correctPass = localStorage.getItem("dvgcart_admin_passcode") || defaultPasscode;
 
-    if (enteredPass === correctPass) {
-      sessionStorage.setItem("dvgcart_admin_session", "active");
-      isAuthenticated = true;
-      adminPassInput.value = "";
-      checkAuth();
-      showToast("Access Granted. Welcome back, Manager.");
+    // Check if Supabase client is active
+    db = getSupabaseClient();
+    if (db) {
+      showToast("Verifying credentials with database...", false);
+      try {
+        const { data, error } = await db.auth.signInWithPassword({
+          email: "admin@dvgcart.com",
+          password: enteredPass
+        });
+        
+        if (error) throw error;
+        
+        sessionStorage.setItem("dvgcart_admin_session", "active");
+        isAuthenticated = true;
+        adminPassInput.value = "";
+        checkAuth();
+        showToast("Access Granted. Welcome back, Manager.");
+      } catch (err) {
+        console.error("Supabase login error:", err);
+        // Fallback to local passcode if credentials mismatch or network fail
+        if (enteredPass === correctPass) {
+          sessionStorage.setItem("dvgcart_admin_session", "active");
+          isAuthenticated = true;
+          adminPassInput.value = "";
+          checkAuth();
+          showToast("Offline Access Granted (Bypassed DB auth).");
+        } else {
+          showToast("Authentication Failed. Invalid passcode or database mismatch.", true);
+        }
+      }
     } else {
-      showToast("Authentication Failed. Invalid passcode.", true);
+      // Fallback to simple LocalStorage passcode check if Supabase is not connected
+      if (enteredPass === correctPass) {
+        sessionStorage.setItem("dvgcart_admin_session", "active");
+        isAuthenticated = true;
+        adminPassInput.value = "";
+        checkAuth();
+        showToast("Access Granted (Offline Mode).");
+      } else {
+        showToast("Authentication Failed. Invalid passcode.", true);
+      }
     }
   });
 
@@ -124,6 +220,12 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSettingsInputs();
     renderCategoryList();
     initAdminLogo();
+    
+    // Automatically optimize and shrink heavy base64 products in background to keep cloud payloads light
+    optimizeExistingProductImages();
+
+    // Check database connection status
+    checkDbConnection();
   }
 
   // Logo Detection and Integration for Admin Panel Top Bar
@@ -215,16 +317,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (faviconEl) faviconEl.href = "logo.png";
     }
 
-    // Cloud Sync config preview
-    const syncConfig = JSON.parse(localStorage.getItem("dvgcart_sync_config"));
-    if (syncConfig) {
-      syncBinIdInput.value = syncConfig.binId || "";
-      syncApiKeyInput.value = syncConfig.apiKey || "";
-      disconnectSyncBtn.style.display = "inline-block";
+    // Supabase DB config preview
+    supabaseUrlInput.value = localStorage.getItem("dvgcart_supabase_url") || DEFAULT_SUPABASE_URL || "";
+    supabaseAnonKeyInput.value = localStorage.getItem("dvgcart_supabase_anon_key") || DEFAULT_SUPABASE_ANON_KEY || "";
+    
+    const hasCustomOverride = localStorage.getItem("dvgcart_supabase_url");
+    if (hasCustomOverride) {
+      clearDbBtn.style.display = "inline-block";
     } else {
-      syncBinIdInput.value = "";
-      syncApiKeyInput.value = "";
-      disconnectSyncBtn.style.display = "none";
+      clearDbBtn.style.display = "none";
     }
   }
 
@@ -358,11 +459,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = function(evt) {
-        const base64Img = evt.target.result;
-        prodImagePreview.style.backgroundImage = `url(${base64Img})`;
+      reader.onload = async function(evt) {
+        const rawBase64 = evt.target.result;
+        showToast("Optimizing product image...", false);
+        const compressedBase64 = await compressBase64Image(rawBase64, 600, 600, 0.7);
+        prodImagePreview.style.backgroundImage = `url(${compressedBase64})`;
         prodImagePreview.classList.add("active");
-        // Clear the URL text field as file upload takes precedence
         prodImageUrl.value = "";
       };
       reader.readAsDataURL(file);
@@ -493,15 +595,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = function(evt) {
-        const base64Img = evt.target.result;
-        localStorage.setItem("dvgcart_logo", base64Img);
+      reader.onload = async function(evt) {
+        const rawBase64 = evt.target.result;
+        showToast("Optimizing logo size...", false);
+        const compressedLogo = await compressBase64Image(rawBase64, 300, 300, 0.7);
+        localStorage.setItem("dvgcart_logo", compressedLogo);
         
-        logoPreviewBox.style.backgroundImage = `url(${base64Img})`;
+        logoPreviewBox.style.backgroundImage = `url(${compressedLogo})`;
         logoPreviewBox.classList.add("active");
         clearLogoBtn.style.display = "inline-block";
         const faviconEl = document.getElementById("tab-favicon");
-        if (faviconEl) faviconEl.href = base64Img;
+        if (faviconEl) faviconEl.href = compressedLogo;
         showToast("Custom brand logo saved.");
         initAdminLogo();
       };
@@ -521,40 +625,87 @@ document.addEventListener("DOMContentLoaded", () => {
     initAdminLogo();
   });
 
-  // Handle Cloud Sync Form Submit
-  cloudSyncForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const binId = syncBinIdInput.value.trim();
-    const apiKey = syncApiKeyInput.value.trim();
-
-    if (!binId || !apiKey) {
-      showToast("Both Bin ID and API Key are required.", true);
+  // Test and update database connection status indicator
+  async function checkDbConnection() {
+    db = getSupabaseClient();
+    if (!db) {
+      dbStatusDot.style.backgroundColor = "#d32f2f"; // Red
+      dbStatusText.textContent = "Database: Offline (No Config)";
+      clearDbBtn.style.display = "none";
       return;
     }
 
-    localStorage.setItem("dvgcart_sync_config", JSON.stringify({ binId, apiKey }));
-    disconnectSyncBtn.style.display = "inline-block";
-    showToast("Connecting to cloud vault...", false);
+    dbStatusDot.style.backgroundColor = "#8E8E93"; // Gray
+    dbStatusText.textContent = "Database: Testing Connection...";
 
+    try {
+      const { data, error } = await db.from("categories").select("name").limit(1);
+      if (error) throw error;
+
+      dbStatusDot.style.backgroundColor = "#2e7d32"; // Green
+      dbStatusText.textContent = "Database: Online & Connected";
+      
+      const customUrl = localStorage.getItem("dvgcart_supabase_url");
+      if (customUrl) {
+        clearDbBtn.style.display = "inline-block";
+      } else {
+        clearDbBtn.style.display = "none";
+      }
+    } catch (err) {
+      console.error("Database status check error:", err);
+      dbStatusDot.style.backgroundColor = "#d32f2f"; // Red
+      dbStatusText.textContent = "Database: Connection Error";
+      clearDbBtn.style.display = "inline-block";
+    }
+  }
+
+  // Handle Supabase DB Sync Form Submit
+  supabaseSyncForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = supabaseUrlInput.value.trim();
+    const key = supabaseAnonKeyInput.value.trim();
+
+    if (!url || !key) {
+      showToast("Both URL and Anon API Key are required.", true);
+      return;
+    }
+
+    localStorage.setItem("dvgcart_supabase_url", url);
+    localStorage.setItem("dvgcart_supabase_anon_key", key);
+    showToast("Saving credentials & testing connection...", false);
+
+    // Reinitialize Supabase instance
+    db = getSupabaseClient();
+    
+    await checkDbConnection();
+    
+    // Sync current local products/categories up to the new database
     const products = getProducts();
     const categories = getCategories();
     
+    showToast("Uploading offline catalog to Supabase...", false);
     const success = await saveCloudCatalog(products, categories);
     if (success) {
-      showToast("Connected & synced catalog with cloud!");
+      showToast("Database linked & catalog synced successfully!");
     } else {
-      showToast("Connected config, but initial sync failed. Verify credentials.", true);
+      showToast("Credentials saved, but catalog push failed. Check RLS policies.", true);
     }
   });
 
-  // Handle Disconnect Sync
-  disconnectSyncBtn.addEventListener("click", () => {
-    if (confirm("Are you sure you want to disconnect cloud synchronization? Your catalog will fall back to local storage.")) {
-      localStorage.removeItem("dvgcart_sync_config");
-      syncBinIdInput.value = "";
-      syncApiKeyInput.value = "";
-      disconnectSyncBtn.style.display = "none";
-      showToast("Cloud sync disconnected.");
+  // Handle Reset DB Settings to default hardcoded variables
+  clearDbBtn.addEventListener("click", async () => {
+    if (confirm("Reset connection settings to default project configurations?")) {
+      localStorage.removeItem("dvgcart_supabase_url");
+      localStorage.removeItem("dvgcart_supabase_anon_key");
+      
+      supabaseUrlInput.value = "";
+      supabaseAnonKeyInput.value = "";
+      clearDbBtn.style.display = "none";
+      
+      // Reinitialize
+      db = getSupabaseClient();
+      await checkDbConnection();
+      showToast("Reset to project default configuration.");
     }
   });
 
@@ -795,15 +946,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const products = getProducts();
     const categories = getCategories();
     
-    const syncConfig = localStorage.getItem("dvgcart_sync_config");
-    if (!syncConfig) return;
+    // Check if Supabase client is active
+    db = getSupabaseClient();
+    if (!db) return;
     
-    showToast("Syncing changes with cloud...");
+    showToast("Syncing changes with Supabase...");
     const success = await saveCloudCatalog(products, categories);
     if (success) {
-      showToast("Cloud sync completed.");
+      showToast("Supabase sync completed.");
     } else {
-      showToast("Cloud sync failed. Check settings.", true);
+      showToast("Supabase sync failed. Check RLS policies.", true);
     }
   }
 });

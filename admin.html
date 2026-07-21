@@ -199,23 +199,29 @@
             
             <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
 
-            <!-- Cloud Synchronization Settings -->
+            <!-- Supabase Database Settings -->
             <div style="margin-bottom: 30px;">
-              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Cloud Sync (Multi-Device Catalog)</h3>
-              <p style="color: var(--color-text-muted); font-size: 12px; margin-bottom: 15px; font-weight: 300;">Link your storefront to <a href="https://jsonbin.io" target="_blank" style="color: var(--color-accent); text-decoration: underline;">jsonbin.io</a> (free online JSON vault). Any additions, edits, or category updates you make here will sync instantly to Vercel and show up for all customers on all phones and computers.</p>
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Supabase Sync Status</h3>
+              <p style="color: var(--color-text-muted); font-size: 12px; margin-bottom: 15px; font-weight: 300;">Your catalog is connected to the Supabase PostgreSQL cloud database. You can manually configure or override your Supabase credentials below.</p>
               
-              <form id="cloud-sync-form">
+              <!-- Connection Status Indicator -->
+              <div id="db-connection-status" style="margin-bottom: 20px; padding: 12px 15px; background: rgba(255,255,255,0.02); border: 1px solid var(--color-border-dark); font-size: 12px; display: flex; align-items: center; gap: 10px;">
+                <span id="db-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background-color: #8E8E93; display: inline-block; transition: background-color 0.3s ease;"></span>
+                <span id="db-status-text" style="color: var(--color-text-muted);">Database: Checking Connection...</span>
+              </div>
+
+              <form id="supabase-sync-form">
                 <div class="form-group">
-                  <label class="form-label" for="sync-bin-id">JSONBin Bin ID</label>
-                  <input type="text" id="sync-bin-id" class="form-control" placeholder="e.g. 64b8a1c9b88b482..." style="font-size: 13px;">
+                  <label class="form-label" for="supabase-url">Supabase URL</label>
+                  <input type="text" id="supabase-url" class="form-control" placeholder="https://xxxx.supabase.co" style="font-size: 13px;">
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="sync-api-key">JSONBin X-Master-Key (API Key)</label>
-                  <input type="password" id="sync-api-key" class="form-control" placeholder="$2b$10$..." style="font-size: 13px;">
+                  <label class="form-label" for="supabase-anon-key">Supabase Anon Key</label>
+                  <input type="password" id="supabase-anon-key" class="form-control" placeholder="eyJhbGciOi..." style="font-size: 13px;">
                 </div>
                 <div style="display: flex; gap: 10px;">
-                  <button type="submit" class="btn-luxury" style="padding: 10px 20px; font-size: 11px; flex: 1;">Connect & Sync Catalog</button>
-                  <button type="button" id="disconnect-sync-btn" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px; border-color: #d32f2f; color: #d32f2f; flex: 1; display: none;">Disconnect Sync</button>
+                  <button type="submit" class="btn-luxury" style="padding: 10px 20px; font-size: 11px; flex: 1;">Save DB Config</button>
+                  <button type="button" id="clear-db-btn" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px; border-color: #d32f2f; color: #d32f2f; flex: 1; display: none;">Reset Defaults</button>
                 </div>
               </form>
             </div>
@@ -319,6 +325,7 @@
   </div>
 
   <!-- JAVASCRIPT SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/products.js"></script>
   <script src="js/admin.js"></script>
 </body>

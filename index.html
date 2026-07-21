@@ -81,6 +81,14 @@
       <h2 class="section-title serif">Curated Catalog</h2>
     </div>
 
+    <!-- Search Bar -->
+    <div class="catalog-search-wrapper" style="max-width: 400px; margin: 0 auto 30px; position: relative; padding: 0 15px;">
+      <input type="text" id="catalog-search" class="form-control" placeholder="Search creations..." style="padding-left: 45px; border-radius: 0; background-color: var(--color-secondary); border-color: var(--color-border-dark); text-align: center; font-size: 13px; height: 45px; letter-spacing: 0.5px;">
+      <span style="position: absolute; left: 30px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); display: flex; align-items: center;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </span>
+    </div>
+
     <!-- Category Filters -->
     <div class="catalog-filters" id="category-filters">
       <button class="filter-btn active" data-category="all">All Creations</button>
@@ -89,7 +97,22 @@
 
     <!-- Products Grid -->
     <div class="products-grid" id="products-grid">
-      <!-- Products will be dynamically generated here -->
+      <!-- Skeleton Loaders (Active on load) -->
+      <div class="product-skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-title"></div>
+        <div class="skeleton-price"></div>
+      </div>
+      <div class="product-skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-title"></div>
+        <div class="skeleton-price"></div>
+      </div>
+      <div class="product-skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-title"></div>
+        <div class="skeleton-price"></div>
+      </div>
     </div>
   </section>
 
@@ -246,6 +269,7 @@
   </div>
 
   <!-- JAVASCRIPT SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/products.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -1,8 +1,10 @@
 /**
- * DvgCart E-Commerce - Product Catalog Seed
+ * DvgCart E-Commerce - Product Catalog Seed & Database Client
  */
 
-const CLOUD_BIN_ID = "6a4d2328da38895dfe3b8cec";
+// Paste your public Supabase project credentials here. They are client-safe to expose.
+const DEFAULT_SUPABASE_URL = ""; 
+const DEFAULT_SUPABASE_ANON_KEY = "";
 
 const DEFAULT_PRODUCTS = [
   {
@@ -81,73 +83,121 @@ function saveCategories(categories) {
   localStorage.setItem("dvgcart_categories_v4", JSON.stringify(categories));
 }
 
-async function fetchCloudCatalog() {
-  const syncConfig = JSON.parse(localStorage.getItem("dvgcart_sync_config"));
-  let binId = "";
-  let apiKey = "";
+/**
+ * Initialize Supabase Client
+ */
+const getSupabaseClient = () => {
+  const url = localStorage.getItem("dvgcart_supabase_url") || DEFAULT_SUPABASE_URL;
+  const key = localStorage.getItem("dvgcart_supabase_anon_key") || DEFAULT_SUPABASE_ANON_KEY;
 
-  if (syncConfig && syncConfig.binId) {
-    binId = syncConfig.binId;
-    apiKey = syncConfig.apiKey;
-  } else if (typeof CLOUD_BIN_ID !== "undefined" && CLOUD_BIN_ID) {
-    binId = CLOUD_BIN_ID;
+  if (url && key && typeof supabase !== "undefined") {
+    try {
+      return supabase.createClient(url, key);
+    } catch (e) {
+      console.error("Supabase client init error:", e);
+    }
   }
+  return null;
+};
 
-  if (!binId) {
+// Global DB client
+let db = getSupabaseClient();
+
+/**
+ * Fetch full catalog from Supabase Relational Database
+ */
+async function fetchCloudCatalog() {
+  db = getSupabaseClient();
+  if (!db) {
+    console.warn("Supabase credentials not configured. Local fallback enabled.");
     return null;
   }
-  
-  try {
-    const headers = {};
-    if (apiKey) {
-      headers["X-Master-Key"] = apiKey;
-    }
 
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers });
-    if (!res.ok) throw new Error("Failed to fetch cloud catalog");
-    const json = await res.json();
+  // Create a 4-second timeout promise
+  const timeoutPromise = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error("Supabase query timed out")), 4000)
+  );
+
+  const fetchPromise = (async () => {
+    // 1. Fetch categories
+    const { data: catData, error: catError } = await db
+      .from("categories")
+      .select("name")
+      .order("name", { ascending: true });
+      
+    if (catError) throw catError;
     
-    // JSONBin returns wrapped in .record by default, handle both wrapped and raw
-    const record = json.record || json;
+    // 2. Fetch products
+    const { data: prodData, error: prodError } = await db
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: true });
+      
+    if (prodError) throw prodError;
+
+    const categoriesList = catData.map(c => c.name);
     
-    if (record && record.products && record.categories) {
-      localStorage.setItem("dvgcart_products_v4", JSON.stringify(record.products));
-      localStorage.setItem("dvgcart_categories_v4", JSON.stringify(record.categories));
-      return record;
-    }
+    // Update Local Cache for offline rendering speeds
+    localStorage.setItem("dvgcart_products_v4", JSON.stringify(prodData));
+    localStorage.setItem("dvgcart_categories_v4", JSON.stringify(categoriesList));
+
+    return {
+      products: prodData,
+      categories: categoriesList
+    };
+  })();
+
+  try {
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } catch (err) {
-    console.error("Cloud Sync Fetch Error:", err);
+    console.error("Supabase Cloud Sync Fetch Error:", err);
   }
   return null;
 }
 
 /**
- * Save catalog to Cloud Sync (JSONBin API)
+ * Perform bulk database save (Backup Import / Truncate & Seed)
  */
 async function saveCloudCatalog(products, categories) {
-  const syncConfig = JSON.parse(localStorage.getItem("dvgcart_sync_config"));
-  if (!syncConfig || !syncConfig.apiKey || !syncConfig.binId) {
-    return false;
-  }
+  db = getSupabaseClient();
+  if (!db) return false;
 
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${syncConfig.binId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": syncConfig.apiKey
-      },
-      body: JSON.stringify({
-        products: products,
-        categories: categories
-      })
-    });
-    return res.ok;
+    // 1. Delete all existing records (Cascade constraints handle dependencies)
+    const { error: delProdError } = await db.from("products").delete().neq("id", "dummy");
+    if (delProdError) throw delProdError;
+
+    const { error: delCatError } = await db.from("categories").delete().neq("name", "dummy");
+    if (delCatError) throw delCatError;
+
+    // 2. Insert new categories list
+    const categoryRows = categories.map(cat => ({ name: cat }));
+    const { error: insCatError } = await db.from("categories").insert(categoryRows);
+    if (insCatError) throw insCatError;
+
+    // 3. Insert new products list
+    const productRows = products.map(p => ({
+      id: p.id,
+      title: p.title,
+      category: p.category,
+      price: p.price,
+      description: p.description,
+      image: p.image,
+      featured: p.featured,
+      specs: p.specs
+    }));
+    
+    if (productRows.length > 0) {
+      const { error: insProdError } = await db.from("products").insert(productRows);
+      if (insProdError) throw insProdError;
+    }
+
+    return true;
   } catch (err) {
-    console.error("Cloud Sync Save Error:", err);
+    console.error("Supabase Bulk Seed Error:", err);
     return false;
   }
 }
 
-// Run initialization immediately on load
+// Run initial offline catalog check
 initializeCatalog();
