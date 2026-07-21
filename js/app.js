@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Elements
   const productsGrid = document.getElementById("products-grid");
   const categoryFilters = document.getElementById("category-filters");
+  const catalogSearchInput = document.getElementById("catalog-search");
   const cartTrigger = document.getElementById("cart-trigger");
   const cartClose = document.getElementById("cart-close");
   const cartDrawer = document.getElementById("cart-drawer");
@@ -169,8 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-
-  const catalogSearchInput = document.getElementById("catalog-search");
 
   if (catalogSearchInput) {
     catalogSearchInput.addEventListener("input", () => {
