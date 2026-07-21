@@ -630,6 +630,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Background Sync from Cloud
   async function performBackgroundSync() {
+    // Dynamically fetch config from Vercel Serverless environment variables if db is not active
+    const isDbActive = typeof db !== "undefined" && db !== null;
+    if (!isDbActive) {
+      try {
+        const response = await fetch("/api/config");
+        if (response.ok) {
+          const config = await response.json();
+          if (config.url && config.anonKey) {
+            window.SUPABASE_CONFIG = config;
+            if (typeof supabase !== "undefined") {
+              db = supabase.createClient(config.url, config.anonKey);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Vercel serverless environment variables fetch bypassed:", err);
+      }
+    }
+
     const cloudData = await fetchCloudCatalog();
     if (cloudData) {
       try {

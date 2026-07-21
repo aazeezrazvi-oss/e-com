@@ -87,8 +87,8 @@ function saveCategories(categories) {
  * Initialize Supabase Client
  */
 const getSupabaseClient = () => {
-  const url = localStorage.getItem("dvgcart_supabase_url") || DEFAULT_SUPABASE_URL;
-  const key = localStorage.getItem("dvgcart_supabase_anon_key") || DEFAULT_SUPABASE_ANON_KEY;
+  const url = localStorage.getItem("dvgcart_supabase_url") || DEFAULT_SUPABASE_URL || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url);
+  const key = localStorage.getItem("dvgcart_supabase_anon_key") || DEFAULT_SUPABASE_ANON_KEY || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey);
 
   if (url && key && typeof supabase !== "undefined") {
     try {

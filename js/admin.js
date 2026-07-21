@@ -627,7 +627,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Test and update database connection status indicator
   async function checkDbConnection() {
-    db = getSupabaseClient();
+    let activeDb = getSupabaseClient();
+    if (!activeDb) {
+      try {
+        const response = await fetch("/api/config");
+        if (response.ok) {
+          const config = await response.json();
+          if (config.url && config.anonKey) {
+            window.SUPABASE_CONFIG = config;
+            if (typeof supabase !== "undefined") {
+              db = supabase.createClient(config.url, config.anonKey);
+              activeDb = db;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Vercel config fetch bypassed in admin:", err);
+      }
+    }
+
+    db = activeDb;
     if (!db) {
       dbStatusDot.style.backgroundColor = "#d32f2f"; // Red
       dbStatusText.textContent = "Database: Offline (No Config)";
