@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Application State
   let products = getProducts();
   let categories = getCategories();
+  let activeCategory = "all";
   let cart = JSON.parse(localStorage.getItem("dvgcart_cart")) || [];
   
   // Admin configurations
@@ -169,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  let activeCategory = "all";
   const catalogSearchInput = document.getElementById("catalog-search");
 
   if (catalogSearchInput) {
