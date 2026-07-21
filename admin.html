@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    window.addEventListener('error', function(e) {
+      const errDiv = document.createElement('div');
+      errDiv.style = 'position:fixed;top:0;left:0;width:100%;background:#ef5350;color:#fff;padding:15px;z-index:999999;font-family:monospace;font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,0.3);line-height:1.4;text-align:left;';
+      errDiv.innerHTML = '<strong>[JS Runtime Error]:</strong> ' + e.message + ' at ' + (e.filename ? e.filename.split("/").pop() : "unknown") + ':' + e.lineno;
+      document.body.appendChild(errDiv);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      const errDiv = document.createElement('div');
+      errDiv.style = 'position:fixed;top:0;left:0;width:100%;background:#ef5350;color:#fff;padding:15px;z-index:999999;font-family:monospace;font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,0.3);line-height:1.4;text-align:left;';
+      errDiv.innerHTML = '<strong>[Promise Rejection]:</strong> ' + (e.reason && (e.reason.message || e.reason.stack || e.reason) || e.reason);
+      document.body.appendChild(errDiv);
+    });
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DvgCart | Admin Dashboard Panel</title>
