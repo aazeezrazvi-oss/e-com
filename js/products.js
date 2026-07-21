@@ -2,9 +2,9 @@
  * DvgCart E-Commerce - Product Catalog Seed & Database Client
  */
 
-// Paste your public Supabase project credentials here. They are client-safe to expose.
-const DEFAULT_SUPABASE_URL = ""; 
-const DEFAULT_SUPABASE_ANON_KEY = "";
+// Load credentials from window config if present
+const DEFAULT_SUPABASE_URL = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || ""; 
+const DEFAULT_SUPABASE_ANON_KEY = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "";
 
 const DEFAULT_PRODUCTS = [
   {
