@@ -3,7 +3,7 @@
  */
 
 // Load credentials from window config if present
-const DEFAULT_SUPABASE_URL = "https://lbdadqkzporcxzkjbqh.supabase.co"; 
+const DEFAULT_SUPABASE_URL = "https://lbdadqkzpzorcxzkjbqh.supabase.co"; 
 const DEFAULT_SUPABASE_ANON_KEY = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "";
 
 const DEFAULT_PRODUCTS = [
@@ -89,11 +89,6 @@ function saveCategories(categories) {
 const getSupabaseClient = () => {
   let url = localStorage.getItem("dvgcart_supabase_url") || DEFAULT_SUPABASE_URL || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url);
   const key = localStorage.getItem("dvgcart_supabase_anon_key") || DEFAULT_SUPABASE_ANON_KEY || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey);
-
-  // Auto-correct spelling typo in Vercel project ID if configured
-  if (url && url.includes("lbdadqkzpzorcxzkjbqh")) {
-    url = url.replace("lbdadqkzpzorcxzkjbqh", "lbdadqkzporcxzkjbqh");
-  }
 
   if (url && key && typeof supabase !== "undefined") {
     try {
