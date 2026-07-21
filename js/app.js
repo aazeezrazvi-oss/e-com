@@ -73,11 +73,18 @@ document.addEventListener("DOMContentLoaded", () => {
     footerLinkYt.href = localStorage.getItem("dvgcart_link_yt") || "#";
     
     const savedWaLink = localStorage.getItem("dvgcart_link_wa");
+    const sanitizedPhone = adminPhone.replace(/[^0-9]/g, "");
+
     if (savedWaLink) {
       footerLinkWa.href = savedWaLink;
     } else {
-      const sanitizedPhone = adminPhone.replace(/[^0-9]/g, "");
       footerLinkWa.href = sanitizedPhone ? `https://wa.me/${sanitizedPhone}` : "#";
+    }
+
+    const footerPhoneDisplay = document.getElementById("footer-phone-display");
+    if (footerPhoneDisplay) {
+      footerPhoneDisplay.href = `https://wa.me/${sanitizedPhone}`;
+      footerPhoneDisplay.textContent = `+${sanitizedPhone}`;
     }
   }
 
