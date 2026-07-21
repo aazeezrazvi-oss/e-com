@@ -165,7 +165,7 @@ async function fetchCloudCatalog() {
  */
 async function saveCloudCatalog(products, categories) {
   db = getSupabaseClient();
-  if (!db) return false;
+  if (!db) return { success: false, error: "Database client not initialized" };
 
   try {
     // 1. Delete all existing records (Cascade constraints handle dependencies)
@@ -197,10 +197,10 @@ async function saveCloudCatalog(products, categories) {
       if (insProdError) throw insProdError;
     }
 
-    return true;
+    return { success: true };
   } catch (err) {
     console.error("Supabase Bulk Seed Error:", err);
-    return false;
+    return { success: false, error: err.message || String(err) };
   }
 }
 

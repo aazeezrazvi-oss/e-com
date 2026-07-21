@@ -703,11 +703,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const categories = getCategories();
     
     showToast("Uploading offline catalog to Supabase...", false);
-    const success = await saveCloudCatalog(products, categories);
-    if (success) {
+    const result = await saveCloudCatalog(products, categories);
+    if (result.success) {
       showToast("Database linked & catalog synced successfully!");
     } else {
-      showToast("Credentials saved, but catalog push failed. Check RLS policies.", true);
+      showToast("Sync failed: " + result.error, true);
     }
   });
 
@@ -970,11 +970,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!db) return;
     
     showToast("Syncing changes with Supabase...");
-    const success = await saveCloudCatalog(products, categories);
-    if (success) {
+    const result = await saveCloudCatalog(products, categories);
+    if (result.success) {
       showToast("Supabase sync completed.");
     } else {
-      showToast("Supabase sync failed. Check RLS policies.", true);
+      showToast("Sync failed: " + result.error, true);
     }
   }
 });
