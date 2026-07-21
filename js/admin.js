@@ -296,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load Settings into Inputs
   function loadSettingsInputs() {
-    setPhoneInput.value = localStorage.getItem("dvgcart_admin_phone") || "18008008800";
+    setPhoneInput.value = localStorage.getItem("dvgcart_admin_phone") || "919483635095";
     setInstaInput.value = localStorage.getItem("dvgcart_link_insta") || "";
     setFbInput.value = localStorage.getItem("dvgcart_link_fb") || "";
     setYtInput.value = localStorage.getItem("dvgcart_link_yt") || "";

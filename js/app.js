@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let cart = JSON.parse(localStorage.getItem("dvgcart_cart")) || [];
   
   // Admin configurations
-  let adminPhone = localStorage.getItem("dvgcart_admin_phone") || "18008008800";
+  let adminPhone = localStorage.getItem("dvgcart_admin_phone") || "919483635095";
 
   // Elements
   const productsGrid = document.getElementById("products-grid");
@@ -569,7 +569,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const encodedText = encodeURIComponent(messageText);
     
     // Retrieve latest admin phone setting
-    adminPhone = localStorage.getItem("dvgcart_admin_phone") || "18008008800";
+    adminPhone = localStorage.getItem("dvgcart_admin_phone") || "919483635095";
     // Sanitize phone number (remove spaces, symbols)
     const sanitizedPhone = adminPhone.replace(/[^0-9]/g, "");
 
