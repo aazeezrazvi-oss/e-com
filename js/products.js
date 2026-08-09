@@ -171,17 +171,11 @@ async function fetchCloudCatalog() {
       return p;
     });
 
-    // If cloud catalog is empty, auto-seed DEFAULT_PRODUCTS to cloud and local
-    if (normalizedProdData.length === 0) {
-      console.log("Cloud products empty. Auto-seeding default luxury catalog...");
-      normalizedProdData = DEFAULT_PRODUCTS;
-      categoriesList = DEFAULT_CATEGORIES;
-      await saveCloudCatalog(DEFAULT_PRODUCTS, DEFAULT_CATEGORIES);
+    // Update Local Cache with exact database records
+    if (normalizedProdData && normalizedProdData.length > 0) {
+      localStorage.setItem("dvgcart_products_v4", JSON.stringify(normalizedProdData));
+      localStorage.setItem("dvgcart_categories_v4", JSON.stringify(categoriesList));
     }
-
-    // Update Local Cache for offline rendering speeds
-    localStorage.setItem("dvgcart_products_v4", JSON.stringify(normalizedProdData));
-    localStorage.setItem("dvgcart_categories_v4", JSON.stringify(categoriesList));
 
     return {
       products: normalizedProdData,
@@ -218,21 +212,38 @@ async function saveCloudCatalog(products, categories) {
     if (insCatError) throw insCatError;
 
     // 3. Insert new products list
-    const productRows = products.map(p => ({
-      id: p.id,
-      title: p.title,
-      category: p.category,
-      price: p.price,
-      description: p.description,
-      image: p.image || (p.images && p.images[0]) || "",
-      images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
-      featured: p.featured,
-      specs: p.specs
-    }));
-    
-    if (productRows.length > 0) {
-      const { error: insProdError } = await db.from("products").insert(productRows);
-      if (insProdError) throw insProdError;
+    if (products.length > 0) {
+      const fullRows = products.map(p => ({
+        id: p.id,
+        title: p.title,
+        category: p.category,
+        price: p.price,
+        description: p.description,
+        image: p.image || (p.images && p.images[0]) || "",
+        images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
+        featured: p.featured,
+        specs: p.specs
+      }));
+
+      // Try inserting full rows including images
+      let { error: insProdError } = await db.from("products").insert(fullRows);
+      
+      // If error occurs (e.g. missing 'images' column in Supabase schema), fallback to standard schema
+      if (insProdError) {
+        console.warn("Retrying product insert without optional images column:", insProdError.message);
+        const stdRows = products.map(p => ({
+          id: p.id,
+          title: p.title,
+          category: p.category,
+          price: p.price,
+          description: p.description,
+          image: p.image || (p.images && p.images[0]) || "",
+          featured: p.featured,
+          specs: p.specs
+        }));
+        const retryResult = await db.from("products").insert(stdRows);
+        if (retryResult.error) throw retryResult.error;
+      }
     }
 
     return { success: true };
