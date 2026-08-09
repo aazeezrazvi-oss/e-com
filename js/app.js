@@ -732,18 +732,15 @@ document.addEventListener("DOMContentLoaded", () => {
     renderHeroBanner();
 
     const cloudData = await fetchCloudCatalog();
-    if (cloudData) {
-      try {
-        products = getProducts();
-        categories = getCategories();
-      } catch (e) {
-        console.error("Cache parsing failed after cloud sync:", e);
-      }
+    if (cloudData && cloudData.products && cloudData.products.length > 0) {
+      // Use cloud data DIRECTLY — don't re-read from localStorage
+      products = cloudData.products;
+      categories = cloudData.categories || getCategories();
       renderFilters();
       renderProducts();
-      console.log("Storefront catalog synced from cloud.");
+      console.log("Storefront catalog synced from cloud. Products:", products.length);
     } else {
-      // Fallback to local catalog if sync fails or times out
+      // Fallback to local catalog if cloud returned empty or failed
       try {
         products = getProducts();
         categories = getCategories();
@@ -752,6 +749,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       renderFilters();
       renderProducts();
+      console.log("Using local catalog fallback. Products:", products.length);
     }
   }
   performBackgroundSync();
