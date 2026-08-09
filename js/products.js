@@ -128,6 +128,55 @@ const getSupabaseClient = () => {
   return null;
 };
 
+/**
+ * Upload a base64 image to Supabase Storage and return public URL.
+ * Falls back to returning the original base64 if storage upload fails.
+ */
+async function uploadImageToStorage(base64DataUrl, folder = "products") {
+  const client = getSupabaseClient();
+  if (!client || !base64DataUrl || !base64DataUrl.startsWith("data:")) {
+    return base64DataUrl; // Return as-is if not a base64 image or no client
+  }
+
+  try {
+    // Convert base64 to Blob
+    const [header, data] = base64DataUrl.split(",");
+    const mimeMatch = header.match(/data:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    const ext = mime.split("/")[1] || "jpg";
+    const byteChars = atob(data);
+    const byteArray = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteArray[i] = byteChars.charCodeAt(i);
+    }
+    const blob = new Blob([byteArray], { type: mime });
+
+    // Generate unique filename
+    const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    // Upload to Supabase Storage bucket "images"
+    const { data: uploadData, error: uploadError } = await client.storage
+      .from("images")
+      .upload(filename, blob, { contentType: mime, upsert: true });
+
+    if (uploadError) {
+      console.warn("Storage upload failed, using base64 fallback:", uploadError.message);
+      return base64DataUrl;
+    }
+
+    // Get public URL
+    const { data: urlData } = client.storage.from("images").getPublicUrl(filename);
+    if (urlData && urlData.publicUrl) {
+      return urlData.publicUrl;
+    }
+
+    return base64DataUrl;
+  } catch (err) {
+    console.warn("Image upload error, using base64 fallback:", err);
+    return base64DataUrl;
+  }
+}
+
 // Global DB client
 let db = getSupabaseClient();
 

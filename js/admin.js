@@ -587,7 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Save/Create Product Form Submission
-  productForm.addEventListener("submit", (e) => {
+  productForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const id = prodFormId.value;
@@ -603,9 +603,22 @@ document.addEventListener("DOMContentLoaded", () => {
       : [];
 
     // Extract images array from 4 slots
-    const imagesArray = [1, 2, 3, 4]
+    let imagesArray = [1, 2, 3, 4]
       .map(slot => getImageSlotValue(slot))
       .filter(src => src && src.trim().length > 0);
+
+    // Upload any base64 images to Supabase Storage
+    showToast("Uploading images to cloud...", false);
+    const uploadedImages = [];
+    for (const imgSrc of imagesArray) {
+      if (imgSrc.startsWith("data:")) {
+        const cloudUrl = await uploadImageToStorage(imgSrc, "products");
+        uploadedImages.push(cloudUrl);
+      } else {
+        uploadedImages.push(imgSrc);
+      }
+    }
+    imagesArray = uploadedImages;
 
     const primaryImage = imagesArray[0] || "images/watch.png";
 
@@ -726,6 +739,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (!heroImgSrc) heroImgSrc = "images/tshirt.png";
 
+      // Upload base64 hero image to Supabase Storage
+      if (heroImgSrc.startsWith("data:")) {
+        showToast("Uploading hero image to cloud...", false);
+        heroImgSrc = await uploadImageToStorage(heroImgSrc, "hero");
+      }
+
       const heroTag = setHeroTagInput ? (setHeroTagInput.value.trim() || "Limited Edition Release") : "Limited Edition Release";
       const heroTitle = setHeroTitleInput ? (setHeroTitleInput.value.trim() || "The Art of Premium Apparel") : "The Art of Premium Apparel";
       const heroDesc = setHeroDescInput ? (setHeroDescInput.value.trim() || "Elevate your daily aesthetic...") : "Elevate your daily aesthetic...";
@@ -749,7 +768,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hero_price_amount: heroPriceAmount
       });
 
-      showToast("Hero Banner configuration updated & synced to database.");
+      showToast("Hero Banner updated & synced to all devices.");
     });
   }
 
