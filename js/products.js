@@ -60,7 +60,16 @@ function initializeCatalog() {
  */
 function getProducts() {
   initializeCatalog();
-  const prods = JSON.parse(localStorage.getItem("dvgcart_products_v4")) || [];
+  let prods = [];
+  try {
+    prods = JSON.parse(localStorage.getItem("dvgcart_products_v4")) || [];
+  } catch (e) {
+    prods = [];
+  }
+  if (!Array.isArray(prods) || prods.length === 0) {
+    prods = DEFAULT_PRODUCTS;
+    localStorage.setItem("dvgcart_products_v4", JSON.stringify(DEFAULT_PRODUCTS));
+  }
   // Ensure images array exists on each product
   return prods.map(p => {
     if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
@@ -82,7 +91,17 @@ function saveProducts(products) {
  */
 function getCategories() {
   initializeCatalog();
-  return JSON.parse(localStorage.getItem("dvgcart_categories_v4"));
+  let cats = [];
+  try {
+    cats = JSON.parse(localStorage.getItem("dvgcart_categories_v4")) || [];
+  } catch (e) {
+    cats = [];
+  }
+  if (!Array.isArray(cats) || cats.length === 0) {
+    cats = DEFAULT_CATEGORIES;
+    localStorage.setItem("dvgcart_categories_v4", JSON.stringify(DEFAULT_CATEGORIES));
+  }
+  return cats;
 }
 
 /**
@@ -144,15 +163,21 @@ async function fetchCloudCatalog() {
       
     if (prodError) throw prodError;
 
-    const categoriesList = catData.map(c => c.name);
-    
-    // Normalize images array
-    const normalizedProdData = (prodData || []).map(p => {
+    let categoriesList = (catData || []).map(c => c.name);
+    let normalizedProdData = (prodData || []).map(p => {
       if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
         p.images = p.image ? [p.image] : [];
       }
       return p;
     });
+
+    // If cloud catalog is empty, auto-seed DEFAULT_PRODUCTS to cloud and local
+    if (normalizedProdData.length === 0) {
+      console.log("Cloud products empty. Auto-seeding default luxury catalog...");
+      normalizedProdData = DEFAULT_PRODUCTS;
+      categoriesList = DEFAULT_CATEGORIES;
+      await saveCloudCatalog(DEFAULT_PRODUCTS, DEFAULT_CATEGORIES);
+    }
 
     // Update Local Cache for offline rendering speeds
     localStorage.setItem("dvgcart_products_v4", JSON.stringify(normalizedProdData));
