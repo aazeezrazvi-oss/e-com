@@ -726,8 +726,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Fetch cloud settings (WhatsApp phone, social media links, hero banner)
+    // Fetch cloud settings (WhatsApp phone, social media links, hero banner, logo)
     await fetchCloudSettings();
+    initLogo();
     initSocialLinks();
     renderHeroBanner();
 

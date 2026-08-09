@@ -342,7 +342,8 @@ async function fetchCloudSettings() {
       hero_desc: "dvgcart_hero_desc",
       hero_image: "dvgcart_hero_image",
       hero_price_title: "dvgcart_hero_price_title",
-      hero_price_amount: "dvgcart_hero_price_amount"
+      hero_price_amount: "dvgcart_hero_price_amount",
+      logo: "dvgcart_logo"
     };
 
     for (const [dbKey, lsKey] of Object.entries(keyMap)) {

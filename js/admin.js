@@ -774,31 +774,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Handle Logo Upload (base64)
+  // Handle Logo Upload (Cloud Storage + Database Sync)
   logoFileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = async function(evt) {
         const rawBase64 = evt.target.result;
-        showToast("Optimizing logo size...", false);
-        const compressedLogo = await compressBase64Image(rawBase64, 300, 300, 0.7);
-        localStorage.setItem("dvgcart_logo", compressedLogo);
+        showToast("Uploading brand logo to cloud...", false);
+        const logoUrl = await uploadImageToStorage(rawBase64, "logo");
+        localStorage.setItem("dvgcart_logo", logoUrl);
+        await saveCloudSetting("logo", logoUrl);
         
-        logoPreviewBox.style.backgroundImage = `url(${compressedLogo})`;
+        logoPreviewBox.style.backgroundImage = `url(${logoUrl})`;
         logoPreviewBox.classList.add("active");
         clearLogoBtn.style.display = "inline-block";
         const faviconEl = document.getElementById("tab-favicon");
-        if (faviconEl) faviconEl.href = compressedLogo;
-        showToast("Custom brand logo saved.");
+        if (faviconEl) faviconEl.href = logoUrl;
+        showToast("Custom brand logo saved & synced to all devices.");
         initAdminLogo();
       };
       reader.readAsDataURL(file);
     }
   });
 
-  clearLogoBtn.addEventListener("click", () => {
+  clearLogoBtn.addEventListener("click", async () => {
     localStorage.removeItem("dvgcart_logo");
+    await saveCloudSetting("logo", "");
     logoPreviewBox.style.backgroundImage = "";
     logoPreviewBox.classList.remove("active");
     clearLogoBtn.style.display = "none";
