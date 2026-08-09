@@ -214,9 +214,21 @@ async function fetchCloudCatalog() {
 
     let categoriesList = (catData || []).map(c => c.name);
     let normalizedProdData = (prodData || []).map(p => {
-      if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
-        p.images = p.image ? [p.image] : [];
+      let imgs = p.images;
+      if (typeof imgs === "string") {
+        try { imgs = JSON.parse(imgs); } catch(e) { imgs = []; }
       }
+      if (!imgs || !Array.isArray(imgs) || imgs.length === 0) {
+        imgs = p.image ? [p.image] : [];
+      }
+      p.images = imgs;
+
+      let spcs = p.specs;
+      if (typeof spcs === "string") {
+        try { spcs = JSON.parse(spcs); } catch(e) { spcs = [spcs]; }
+      }
+      p.specs = Array.isArray(spcs) ? spcs : [];
+
       return p;
     });
 

@@ -1135,7 +1135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     setTimeout(() => {
       toast.style.opacity = "0";
-      toast.style.transform = "translateX(50px)";
+      toast.style.transform = "translateX(-50px)";
       setTimeout(() => {
         toast.remove();
       }, 5000);
