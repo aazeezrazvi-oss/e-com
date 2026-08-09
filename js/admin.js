@@ -679,8 +679,79 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("dvgcart_admin_passcode", pass);
     await saveCloudSetting("admin_passcode", pass);
     setPassInput.value = "";
-    showToast("Social media links updated successfully.");
+    showToast("Secure passcode updated & synced to database.");
   });
+
+  if (settingsSocialsForm) {
+    settingsSocialsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const insta = setInstaInput.value.trim();
+      const fb = setFbInput.value.trim();
+      const yt = setYtInput.value.trim();
+      const wa = setWaInput.value.trim();
+
+      localStorage.setItem("dvgcart_link_insta", insta);
+      localStorage.setItem("dvgcart_link_fb", fb);
+      localStorage.setItem("dvgcart_link_yt", yt);
+      localStorage.setItem("dvgcart_link_wa", wa);
+
+      await saveCloudSettingsBatch({
+        link_insta: insta,
+        link_fb: fb,
+        link_yt: yt,
+        link_wa: wa
+      });
+
+      showToast("Social media links updated & synced to database.");
+    });
+  }
+
+  if (settingsHeroForm) {
+    settingsHeroForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      let heroImgSrc = "";
+      if (heroImagePreviewBox) {
+        const bg = heroImagePreviewBox.style.backgroundImage;
+        if (bg && bg.startsWith('url(')) {
+          let clean = bg.slice(4, -1);
+          if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+            clean = clean.slice(1, -1);
+          }
+          heroImgSrc = clean;
+        }
+      }
+      if (!heroImgSrc && setHeroImageInput) {
+        heroImgSrc = setHeroImageInput.value.trim();
+      }
+      if (!heroImgSrc) heroImgSrc = "images/tshirt.png";
+
+      const heroTag = setHeroTagInput ? (setHeroTagInput.value.trim() || "Limited Edition Release") : "Limited Edition Release";
+      const heroTitle = setHeroTitleInput ? (setHeroTitleInput.value.trim() || "The Art of Premium Apparel") : "The Art of Premium Apparel";
+      const heroDesc = setHeroDescInput ? (setHeroDescInput.value.trim() || "Elevate your daily aesthetic...") : "Elevate your daily aesthetic...";
+      const heroPriceTitle = setHeroPriceTitleInput ? (setHeroPriceTitleInput.value.trim() || "Signature Pima Tee") : "Signature Pima Tee";
+      const heroPriceAmount = setHeroPriceAmountInput ? (setHeroPriceAmountInput.value.trim() || "₹9,999") : "₹9,999";
+
+      localStorage.setItem("dvgcart_hero_tag", heroTag);
+      localStorage.setItem("dvgcart_hero_title", heroTitle);
+      localStorage.setItem("dvgcart_hero_desc", heroDesc);
+      localStorage.setItem("dvgcart_hero_image", heroImgSrc);
+      localStorage.setItem("dvgcart_hero_price_title", heroPriceTitle);
+      localStorage.setItem("dvgcart_hero_price_amount", heroPriceAmount);
+
+      showToast("Updating Hero Banner in cloud...", false);
+      await saveCloudSettingsBatch({
+        hero_tag: heroTag,
+        hero_title: heroTitle,
+        hero_desc: heroDesc,
+        hero_image: heroImgSrc,
+        hero_price_title: heroPriceTitle,
+        hero_price_amount: heroPriceAmount
+      });
+
+      showToast("Hero Banner configuration updated & synced to database.");
+    });
+  }
 
   // Handle Logo Upload (base64)
   logoFileInput.addEventListener("change", (e) => {
