@@ -2,9 +2,9 @@
  * DvgCart E-Commerce - Product Catalog Seed & Database Client
  */
 
-// Load credentials from window config if present
+// Supabase Database Credentials (anon keys are public by design, protected by RLS)
 const DEFAULT_SUPABASE_URL = "https://lbdadqkzpzorcxzkjbqh.supabase.co"; 
-const DEFAULT_SUPABASE_ANON_KEY = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "";
+const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiZGFkcWt6cHpvcmN4emtqYnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTMyMjIsImV4cCI6MjEwMDE4OTIyMn0.S3z9LLDBHUMCVX19g52Ep3C2btZElpf5bANyWuKblYU";
 
 const DEFAULT_PRODUCTS = [
   {
