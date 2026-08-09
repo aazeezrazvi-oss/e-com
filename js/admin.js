@@ -3,8 +3,8 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Helper to compress base64 images to prevent 413 Content Too Large errors on JSONBin
-  function compressBase64Image(base64Str, maxWidth = 600, maxHeight = 600, quality = 0.7) {
+  // Helper to optimize image resolution for high-definition rendering while maintaining ultra-high quality (0.95)
+  function compressBase64Image(base64Str, maxWidth = 1920, maxHeight = 1920, quality = 0.95) {
     return new Promise((resolve) => {
       if (!base64Str || !base64Str.startsWith("data:image")) {
         resolve(base64Str);
@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
         canvas.height = height;
 
         const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(img, 0, 0, width, height);
 
         const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
@@ -480,8 +482,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const reader = new FileReader();
           reader.onload = async function(evt) {
             const rawBase64 = evt.target.result;
-            showToast(`Optimizing photo ${slot}...`, false);
-            const compressedBase64 = await compressBase64Image(rawBase64, 600, 600, 0.7);
+            showToast(`Processing HD photo ${slot}...`, false);
+            const compressedBase64 = await compressBase64Image(rawBase64, 1600, 1600, 0.95);
             prevBox.style.backgroundImage = `url("${compressedBase64}")`;
             prevBox.classList.add("active");
             urlInput.value = "";
@@ -514,8 +516,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const reader = new FileReader();
         reader.onload = async function(evt) {
           const rawBase64 = evt.target.result;
-          showToast("Optimizing hero banner image...", false);
-          const compressed = await compressBase64Image(rawBase64, 800, 800, 0.7);
+          showToast("Processing HD hero banner image...", false);
+          const compressed = await compressBase64Image(rawBase64, 1920, 1920, 0.95);
           heroImagePreviewBox.style.backgroundImage = `url("${compressed}")`;
           heroImagePreviewBox.classList.add("active");
           setHeroImageInput.value = "";
