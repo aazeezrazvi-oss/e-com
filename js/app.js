@@ -462,6 +462,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Hero Banner Dynamic Renderer
+  function renderHeroBanner() {
+    const heroTagEl = document.querySelector(".hero-tag");
+    const heroTitleEl = document.querySelector(".hero-title");
+    const heroDescEl = document.querySelector(".hero-desc");
+    const heroImgEl = document.getElementById("hero-featured-image");
+    const heroPriceTitleEl = document.querySelector(".hero-price-title");
+    const heroPriceAmountEl = document.querySelector(".hero-price-amount");
+
+    const heroTag = localStorage.getItem("dvgcart_hero_tag");
+    const heroTitle = localStorage.getItem("dvgcart_hero_title");
+    const heroDesc = localStorage.getItem("dvgcart_hero_desc");
+    const heroImg = localStorage.getItem("dvgcart_hero_image");
+    const heroPriceTitle = localStorage.getItem("dvgcart_hero_price_title");
+    const heroPriceAmount = localStorage.getItem("dvgcart_hero_price_amount");
+
+    if (heroTag && heroTagEl) heroTagEl.textContent = heroTag;
+    if (heroTitle && heroTitleEl) {
+      heroTitleEl.innerHTML = heroTitle.includes("span") 
+        ? heroTitle 
+        : heroTitle.replace(/(Apparel|Luxury|Release|Collection|Tee|Headphones|Watches)/i, '<span class="gold-text">$1</span>');
+    }
+    if (heroDesc && heroDescEl) heroDescEl.textContent = heroDesc;
+    if (heroImg && heroImgEl) heroImgEl.src = heroImg;
+    if (heroPriceTitle && heroPriceTitleEl) heroPriceTitleEl.textContent = heroPriceTitle;
+    if (heroPriceAmount && heroPriceAmountEl) heroPriceAmountEl.textContent = heroPriceAmount;
+  }
+
+  // Initial Hero Banner render
+  renderHeroBanner();
+
   // Quick View Modal
   function openQuickView(productId) {
     const product = products.find(p => p.id === productId);
@@ -469,6 +500,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const priceFormatted = product.price.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
     
+    // Normalize photos array
+    const photos = (product.images && product.images.length > 0) ? product.images : [product.image || "images/watch.png"];
+
     // Build specs list HTML
     let specsHTML = "";
     if (product.specs && product.specs.length > 0) {
@@ -480,9 +514,24 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
+    // Build thumbnail gallery HTML if multiple photos exist
+    let galleryHTML = "";
+    if (photos.length > 1) {
+      galleryHTML = `
+        <div class="product-detail-gallery-thumbs">
+          ${photos.map((imgSrc, index) => `
+            <button class="gallery-thumb-btn ${index === 0 ? 'active' : ''}" data-index="${index}" title="View photo ${index + 1}">
+              <img src="${imgSrc}" alt="${product.title} photo ${index + 1}" class="gallery-thumb-img" onerror="this.src='images/watch.png'">
+            </button>
+          `).join("")}
+        </div>
+      `;
+    }
+
     quickViewContent.innerHTML = `
       <div class="product-detail-image-box">
-        <img src="${product.image}" alt="${product.title}" class="product-detail-img" onerror="this.src='images/watch.png'">
+        <img src="${photos[0]}" alt="${product.title}" class="product-detail-img" id="quick-view-main-img" onerror="this.src='images/watch.png'">
+        ${galleryHTML}
       </div>
       <div class="product-detail-info-box">
         <span class="product-detail-category">${product.category}</span>
@@ -493,6 +542,27 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="btn-luxury add-to-cart-quickview" data-id="${product.id}" style="width: 100%;">Add to Collection</button>
       </div>
     `;
+
+    // Bind thumbnail click events if multiple photos
+    if (photos.length > 1) {
+      const mainImg = document.getElementById("quick-view-main-img");
+      const thumbBtns = quickViewContent.querySelectorAll(".gallery-thumb-btn");
+
+      thumbBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.getAttribute("data-index"), 10);
+          if (mainImg && photos[idx]) {
+            mainImg.style.opacity = "0.3";
+            setTimeout(() => {
+              mainImg.src = photos[idx];
+              mainImg.style.opacity = "1";
+            }, 150);
+          }
+          thumbBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+        });
+      });
+    }
 
     quickViewModal.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -654,7 +724,10 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         console.warn("Vercel serverless environment variables fetch bypassed:", err);
       }
-    }
+    // Fetch cloud settings (WhatsApp phone, social media links, hero banner)
+    await fetchCloudSettings();
+    initSocialLinks();
+    renderHeroBanner();
 
     const cloudData = await fetchCloudCatalog();
     if (cloudData) {

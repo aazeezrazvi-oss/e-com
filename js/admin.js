@@ -114,6 +114,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const setYtInput = document.getElementById("set-yt");
   const setWaInput = document.getElementById("set-wa");
 
+  // Elements - Settings - Hero Banner Management
+  const settingsHeroForm = document.getElementById("settings-hero-form");
+  const setHeroTagInput = document.getElementById("set-hero-tag");
+  const setHeroTitleInput = document.getElementById("set-hero-title");
+  const setHeroDescInput = document.getElementById("set-hero-desc");
+  const setHeroPriceTitleInput = document.getElementById("set-hero-price-title");
+  const setHeroPriceAmountInput = document.getElementById("set-hero-price-amount");
+  const setHeroImageInput = document.getElementById("set-hero-image");
+  const heroImageFileInput = document.getElementById("hero-image-file");
+  const heroImagePreviewBox = document.getElementById("hero-image-preview");
+
   // Elements - Category Management
   const addCategoryForm = document.getElementById("add-category-form");
   const newCategoryNameInput = document.getElementById("new-category-name");
@@ -301,6 +312,25 @@ document.addEventListener("DOMContentLoaded", () => {
     setFbInput.value = localStorage.getItem("dvgcart_link_fb") || "";
     setYtInput.value = localStorage.getItem("dvgcart_link_yt") || "";
     setWaInput.value = localStorage.getItem("dvgcart_link_wa") || "";
+
+    // Hero Banner Settings
+    if (setHeroTagInput) setHeroTagInput.value = localStorage.getItem("dvgcart_hero_tag") || "Limited Edition Release";
+    if (setHeroTitleInput) setHeroTitleInput.value = localStorage.getItem("dvgcart_hero_title") || "The Art of Premium Apparel";
+    if (setHeroDescInput) setHeroDescInput.value = localStorage.getItem("dvgcart_hero_desc") || "Elevate your daily aesthetic. Explore our meticulously tailored organic cotton tees, high-fidelity audio equipment, and custom designer accents.";
+    if (setHeroPriceTitleInput) setHeroPriceTitleInput.value = localStorage.getItem("dvgcart_hero_price_title") || "Signature Pima Tee";
+    if (setHeroPriceAmountInput) setHeroPriceAmountInput.value = localStorage.getItem("dvgcart_hero_price_amount") || "₹9,999";
+    
+    const heroImg = localStorage.getItem("dvgcart_hero_image") || "images/tshirt.png";
+    if (setHeroImageInput) setHeroImageInput.value = heroImg;
+    if (heroImagePreviewBox) {
+      if (heroImg) {
+        heroImagePreviewBox.style.backgroundImage = `url(${heroImg})`;
+        heroImagePreviewBox.classList.add("active");
+      } else {
+        heroImagePreviewBox.style.backgroundImage = "";
+        heroImagePreviewBox.classList.remove("active");
+      }
+    }
     
     // Custom Logo preview
     const customLogo = localStorage.getItem("dvgcart_logo");
@@ -404,12 +434,115 @@ document.addEventListener("DOMContentLoaded", () => {
       syncAdminCatalog();
     }
   }
+  // Helper to resolve image slot value from preview background or input text
+  function getImageSlotValue(slotIndex) {
+    const prev = document.getElementById(`prod-img-prev-${slotIndex}`);
+    const input = document.getElementById(`prod-img-url-${slotIndex}`);
+    if (!prev || !input) return "";
+    const bg = prev.style.backgroundImage;
+    if (bg && bg.startsWith('url(')) {
+      // Extract URL or Base64 string between url("...") or url('...') or url(...)
+      let clean = bg.slice(4, -1);
+      if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+        clean = clean.slice(1, -1);
+      }
+      return clean;
+    }
+    return input.value.trim();
+  }
+
+  function setImageSlotValue(slotIndex, src) {
+    const prev = document.getElementById(`prod-img-prev-${slotIndex}`);
+    const input = document.getElementById(`prod-img-url-${slotIndex}`);
+    const file = document.getElementById(`prod-img-file-${slotIndex}`);
+    if (!prev || !input) return;
+    input.value = src || "";
+    if (file) file.value = "";
+    if (src) {
+      prev.style.backgroundImage = `url("${src}")`;
+      prev.classList.add("active");
+    } else {
+      prev.style.backgroundImage = "";
+      prev.classList.remove("active");
+    }
+  }
+
+  // Bind file change and text input events for all 4 photo slots
+  [1, 2, 3, 4].forEach(slot => {
+    const fileInput = document.getElementById(`prod-img-file-${slot}`);
+    const urlInput = document.getElementById(`prod-img-url-${slot}`);
+    const prevBox = document.getElementById(`prod-img-prev-${slot}`);
+
+    if (fileInput) {
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = async function(evt) {
+            const rawBase64 = evt.target.result;
+            showToast(`Optimizing photo ${slot}...`, false);
+            const compressedBase64 = await compressBase64Image(rawBase64, 600, 600, 0.7);
+            prevBox.style.backgroundImage = `url("${compressedBase64}")`;
+            prevBox.classList.add("active");
+            urlInput.value = "";
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (urlInput) {
+      urlInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim();
+        if (val) {
+          prevBox.style.backgroundImage = `url("${val}")`;
+          prevBox.classList.add("active");
+          if (fileInput) fileInput.value = "";
+        } else {
+          prevBox.style.backgroundImage = "";
+          prevBox.classList.remove("active");
+        }
+      });
+    }
+  });
+
+  // Hero image upload & URL preview listeners
+  if (heroImageFileInput) {
+    heroImageFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async function(evt) {
+          const rawBase64 = evt.target.result;
+          showToast("Optimizing hero banner image...", false);
+          const compressed = await compressBase64Image(rawBase64, 800, 800, 0.7);
+          heroImagePreviewBox.style.backgroundImage = `url("${compressed}")`;
+          heroImagePreviewBox.classList.add("active");
+          setHeroImageInput.value = "";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  if (setHeroImageInput) {
+    setHeroImageInput.addEventListener("input", (e) => {
+      const val = e.target.value.trim();
+      if (val) {
+        heroImagePreviewBox.style.backgroundImage = `url("${val}")`;
+        heroImagePreviewBox.classList.add("active");
+        if (heroImageFileInput) heroImageFileInput.value = "";
+      } else {
+        heroImagePreviewBox.style.backgroundImage = "";
+        heroImagePreviewBox.classList.remove("active");
+      }
+    });
+  }
 
   // 4. PRODUCT ADD/EDIT MODAL
   function openProductModal(id = null) {
     productForm.reset();
-    prodImagePreview.style.backgroundImage = "";
-    prodImagePreview.classList.remove("active");
+    [1, 2, 3, 4].forEach(slot => setImageSlotValue(slot, ""));
     
     if (id) {
       // Edit Mode
@@ -423,15 +556,14 @@ document.addEventListener("DOMContentLoaded", () => {
       prodCategory.value = product.category;
       prodPrice.value = product.price;
       prodDesc.value = product.description;
-      prodImageUrl.value = product.image;
       prodSpecs.value = product.specs ? product.specs.join("\n") : "";
       prodFeatured.checked = product.featured || false;
       prodSubmitBtn.textContent = "Save Changes";
 
-      if (product.image) {
-        prodImagePreview.style.backgroundImage = `url(${product.image})`;
-        prodImagePreview.classList.add("active");
-      }
+      const photos = (product.images && product.images.length > 0) ? product.images : [product.image];
+      [1, 2, 3, 4].forEach((slot, idx) => {
+        setImageSlotValue(slot, photos[idx] || "");
+      });
     } else {
       // Add Mode
       productModalTitle.textContent = "Add New Creation";
@@ -454,37 +586,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === productModal) closeProductModal();
   });
 
-  // Handle local image file uploads for products
-  prodImageFile.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async function(evt) {
-        const rawBase64 = evt.target.result;
-        showToast("Optimizing product image...", false);
-        const compressedBase64 = await compressBase64Image(rawBase64, 600, 600, 0.7);
-        prodImagePreview.style.backgroundImage = `url(${compressedBase64})`;
-        prodImagePreview.classList.add("active");
-        prodImageUrl.value = "";
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // Keep preview synced if admin pastes image URL
-  prodImageUrl.addEventListener("input", (e) => {
-    const val = e.target.value;
-    if (val) {
-      prodImagePreview.style.backgroundImage = `url(${val})`;
-      prodImagePreview.classList.add("active");
-      // Clear file field
-      prodImageFile.value = "";
-    } else {
-      prodImagePreview.style.backgroundImage = "";
-      prodImagePreview.classList.remove("active");
-    }
-  });
-
   // Save/Create Product Form Submission
   productForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -501,16 +602,12 @@ document.addEventListener("DOMContentLoaded", () => {
       ? prodSpecs.value.split("\n").map(line => line.trim()).filter(line => line.length > 0)
       : [];
 
-    // Image URL resolution: Base64 preview style background, else the text URL, else watch placeholder
-    let imageSrc = "";
-    const bgUrl = prodImagePreview.style.backgroundImage;
-    
-    if (bgUrl && bgUrl.startsWith('url("data:image')) {
-      // Extract base64 inside url("...")
-      imageSrc = bgUrl.slice(5, -2);
-    } else {
-      imageSrc = prodImageUrl.value || "images/watch.png";
-    }
+    // Extract images array from 4 slots
+    const imagesArray = [1, 2, 3, 4]
+      .map(slot => getImageSlotValue(slot))
+      .filter(src => src && src.trim().length > 0);
+
+    const primaryImage = imagesArray[0] || "images/watch.png";
 
     const products = getProducts();
 
@@ -524,7 +621,8 @@ document.addEventListener("DOMContentLoaded", () => {
           category,
           price,
           description,
-          image: imageSrc,
+          image: primaryImage,
+          images: imagesArray.length > 0 ? imagesArray : [primaryImage],
           specs: specsArray,
           featured
         };
@@ -538,7 +636,8 @@ document.addEventListener("DOMContentLoaded", () => {
         category,
         price,
         description,
-        image: imageSrc,
+        image: primaryImage,
+        images: imagesArray.length > 0 ? imagesArray : [primaryImage],
         specs: specsArray,
         featured
       };
@@ -554,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 5. ADMINISTRATIVE SETTINGS FORM SUBMITS
-  settingsPhoneForm.addEventListener("submit", (e) => {
+  settingsPhoneForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const phone = setPhoneInput.value.replace(/[^0-9]/g, ""); // Remove non-digits
     
@@ -564,10 +663,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     localStorage.setItem("dvgcart_admin_phone", phone);
-    showToast("Concierge WhatsApp contact updated successfully.");
+    await saveCloudSetting("admin_phone", phone);
+    showToast("Concierge WhatsApp contact updated & synced to database.");
   });
 
-  settingsPassForm.addEventListener("submit", (e) => {
+  settingsPassForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const pass = setPassInput.value.trim();
 
@@ -577,16 +677,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     localStorage.setItem("dvgcart_admin_passcode", pass);
+    await saveCloudSetting("admin_passcode", pass);
     setPassInput.value = "";
-    showToast("Secure passcode updated successfully.");
-  });
-
-  settingsSocialsForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    localStorage.setItem("dvgcart_link_insta", setInstaInput.value.trim());
-    localStorage.setItem("dvgcart_link_fb", setFbInput.value.trim());
-    localStorage.setItem("dvgcart_link_yt", setYtInput.value.trim());
-    localStorage.setItem("dvgcart_link_wa", setWaInput.value.trim());
     showToast("Social media links updated successfully.");
   });
 

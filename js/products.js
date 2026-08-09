@@ -14,6 +14,7 @@ const DEFAULT_PRODUCTS = [
     price: 9999,
     description: "A premium heavyweight t-shirt crafted from hand-harvested Peruvian Pima cotton. Designed with a structured, luxury drape and double-needle stitching for lasting shape.",
     image: "images/tshirt.png",
+    images: ["images/tshirt.png"],
     featured: true,
     specs: [
       "Material: 100% Organic Pima Cotton",
@@ -29,6 +30,7 @@ const DEFAULT_PRODUCTS = [
     price: 34999,
     description: "Professional noise-cancelling headphones featuring acoustic-grade titanium drivers and premium calfskin memory foam ear cups. Experience sound in its purest, unfiltered form.",
     image: "images/headphones.png",
+    images: ["images/headphones.png"],
     featured: true,
     specs: [
       "Drivers: 40mm Electro-dynamic Titanium",
@@ -58,7 +60,14 @@ function initializeCatalog() {
  */
 function getProducts() {
   initializeCatalog();
-  return JSON.parse(localStorage.getItem("dvgcart_products_v4"));
+  const prods = JSON.parse(localStorage.getItem("dvgcart_products_v4")) || [];
+  // Ensure images array exists on each product
+  return prods.map(p => {
+    if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
+      p.images = p.image ? [p.image] : [];
+    }
+    return p;
+  });
 }
 
 /**
@@ -137,12 +146,20 @@ async function fetchCloudCatalog() {
 
     const categoriesList = catData.map(c => c.name);
     
+    // Normalize images array
+    const normalizedProdData = (prodData || []).map(p => {
+      if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
+        p.images = p.image ? [p.image] : [];
+      }
+      return p;
+    });
+
     // Update Local Cache for offline rendering speeds
-    localStorage.setItem("dvgcart_products_v4", JSON.stringify(prodData));
+    localStorage.setItem("dvgcart_products_v4", JSON.stringify(normalizedProdData));
     localStorage.setItem("dvgcart_categories_v4", JSON.stringify(categoriesList));
 
     return {
-      products: prodData,
+      products: normalizedProdData,
       categories: categoriesList
     };
   })();
@@ -182,7 +199,8 @@ async function saveCloudCatalog(products, categories) {
       category: p.category,
       price: p.price,
       description: p.description,
-      image: p.image,
+      image: p.image || (p.images && p.images[0]) || "",
+      images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
       featured: p.featured,
       specs: p.specs
     }));
@@ -196,6 +214,88 @@ async function saveCloudCatalog(products, categories) {
   } catch (err) {
     console.error("Supabase Bulk Seed Error:", err);
     return { success: false, error: err.message || String(err) };
+  }
+}
+
+/**
+ * Fetch admin settings from Supabase 'settings' table
+ */
+async function fetchCloudSettings() {
+  db = getSupabaseClient();
+  if (!db) return null;
+
+  try {
+    const { data, error } = await db.from("settings").select("key, value");
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+
+    const settings = {};
+    data.forEach(row => { settings[row.key] = row.value; });
+
+    // Store all fetched settings into localStorage for offline use
+    const keyMap = {
+      admin_phone: "dvgcart_admin_phone",
+      link_insta: "dvgcart_link_insta",
+      link_fb: "dvgcart_link_fb",
+      link_yt: "dvgcart_link_yt",
+      link_wa: "dvgcart_link_wa",
+      admin_passcode: "dvgcart_admin_passcode",
+      hero_tag: "dvgcart_hero_tag",
+      hero_title: "dvgcart_hero_title",
+      hero_desc: "dvgcart_hero_desc",
+      hero_image: "dvgcart_hero_image",
+      hero_price_title: "dvgcart_hero_price_title",
+      hero_price_amount: "dvgcart_hero_price_amount"
+    };
+
+    for (const [dbKey, lsKey] of Object.entries(keyMap)) {
+      if (settings[dbKey] !== undefined) {
+        localStorage.setItem(lsKey, settings[dbKey]);
+      }
+    }
+
+    return settings;
+  } catch (err) {
+    console.error("Fetch cloud settings error:", err);
+    return null;
+  }
+}
+
+/**
+ * Save a single admin setting to Supabase 'settings' table
+ */
+async function saveCloudSetting(key, value) {
+  db = getSupabaseClient();
+  if (!db) return false;
+
+  try {
+    const { error } = await db.from("settings").upsert(
+      { key: key, value: value },
+      { onConflict: "key" }
+    );
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Save cloud setting error:", err);
+    return false;
+  }
+}
+
+/**
+ * Save multiple admin settings to Supabase at once
+ */
+async function saveCloudSettingsBatch(settingsObj) {
+  db = getSupabaseClient();
+  if (!db) return false;
+
+  try {
+    const rows = Object.entries(settingsObj).map(([key, value]) => ({ key, value }));
+    const { error } = await db.from("settings").upsert(rows, { onConflict: "key" });
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Save cloud settings batch error:", err);
+    return false;
   }
 }
 

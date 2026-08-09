@@ -178,6 +178,52 @@
 
             <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
 
+            <!-- Hero Banner Management -->
+            <form id="settings-hero-form" style="margin-bottom: 30px;">
+              <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Hero Banner Management</h3>
+              <div class="form-group">
+                <label class="form-label" for="set-hero-tag">Banner Tagline / Subtitle</label>
+                <input type="text" id="set-hero-tag" class="form-control" placeholder="e.g. Limited Edition Release">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="set-hero-title">Headline Title</label>
+                <input type="text" id="set-hero-title" class="form-control" placeholder="e.g. The Art of Premium Apparel">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="set-hero-desc">Banner Description</label>
+                <textarea id="set-hero-desc" class="form-control" placeholder="e.g. Elevate your daily aesthetic..." style="min-height: 70px;"></textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                  <label class="form-label" for="set-hero-price-title">Featured Item Name</label>
+                  <input type="text" id="set-hero-price-title" class="form-control" placeholder="e.g. Signature Pima Tee">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="set-hero-price-amount">Featured Price Badge</label>
+                  <input type="text" id="set-hero-price-amount" class="form-control" placeholder="e.g. ₹9,999">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hero Featured Banner Photo</label>
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; align-items: start;">
+                  <div>
+                    <div class="file-upload-wrapper" style="width: 100%;">
+                      <button type="button" class="btn-file-upload">Upload Hero Photo</button>
+                      <input type="file" id="hero-image-file" class="file-upload-input" accept="image/*">
+                    </div>
+                    <p style="text-align: center; color: var(--color-text-muted); font-size: 10px; margin: 6px 0;">- OR -</p>
+                    <input type="text" id="set-hero-image" class="form-control" placeholder="e.g. images/tshirt.png">
+                  </div>
+                  <div>
+                    <div class="image-preview-box" id="hero-image-preview" style="width: 100%; height: 100px; margin-top: 0;"></div>
+                  </div>
+                </div>
+              </div>
+              <button type="submit" class="btn-luxury-outline" style="padding: 10px 20px; font-size: 11px;">Update Hero Banner</button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 30px 0;">
+
             <!-- Category Management -->
             <div style="margin-bottom: 30px;">
               <h3 class="serif" style="font-size: 16px; margin-bottom: 15px; color: var(--color-accent);">Manage Categories</h3>
@@ -307,19 +353,53 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Product Image</label>
-          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start;">
-            <div>
+          <label class="form-label">Product Photos (Upload 3 to 4 Photos for Gallery)</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+            
+            <!-- Photo Slot 1 (Main Cover) -->
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border: 1px solid var(--color-border-dark);">
+              <label style="font-size: 11px; color: var(--color-accent); font-weight: 500; margin-bottom: 6px; display: block;">Photo 1 (Main Cover)</label>
               <div class="file-upload-wrapper" style="width: 100%;">
-                <button type="button" class="btn-file-upload">Upload Product Image</button>
-                <input type="file" id="prod-image-file" class="file-upload-input" accept="image/*">
+                <button type="button" class="btn-file-upload" style="font-size: 10px; padding: 6px 10px;">Upload Photo 1</button>
+                <input type="file" id="prod-img-file-1" class="file-upload-input" accept="image/*">
               </div>
-              <p style="text-align: center; color: var(--color-text-muted); font-size: 11px; margin: 8px 0;">- OR -</p>
-              <input type="text" id="prod-image-url" class="form-control" placeholder="e.g. images/watch.png (Image Path)">
+              <input type="text" id="prod-img-url-1" class="form-control" placeholder="Image URL / Path 1" style="font-size: 11px; margin-top: 6px; height: 32px;">
+              <div class="image-preview-box" id="prod-img-prev-1" style="width: 100%; height: 75px; margin-top: 8px;"></div>
             </div>
-            <div>
-              <div class="image-preview-box" id="prod-image-preview" style="width: 100%; height: 130px; margin-top: 0;"></div>
+
+            <!-- Photo Slot 2 -->
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border: 1px solid var(--color-border-dark);">
+              <label style="font-size: 11px; color: var(--color-text-muted); font-weight: 500; margin-bottom: 6px; display: block;">Photo 2 (Gallery Detail)</label>
+              <div class="file-upload-wrapper" style="width: 100%;">
+                <button type="button" class="btn-file-upload" style="font-size: 10px; padding: 6px 10px;">Upload Photo 2</button>
+                <input type="file" id="prod-img-file-2" class="file-upload-input" accept="image/*">
+              </div>
+              <input type="text" id="prod-img-url-2" class="form-control" placeholder="Image URL / Path 2" style="font-size: 11px; margin-top: 6px; height: 32px;">
+              <div class="image-preview-box" id="prod-img-prev-2" style="width: 100%; height: 75px; margin-top: 8px;"></div>
             </div>
+
+            <!-- Photo Slot 3 -->
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border: 1px solid var(--color-border-dark);">
+              <label style="font-size: 11px; color: var(--color-text-muted); font-weight: 500; margin-bottom: 6px; display: block;">Photo 3 (Gallery Angle)</label>
+              <div class="file-upload-wrapper" style="width: 100%;">
+                <button type="button" class="btn-file-upload" style="font-size: 10px; padding: 6px 10px;">Upload Photo 3</button>
+                <input type="file" id="prod-img-file-3" class="file-upload-input" accept="image/*">
+              </div>
+              <input type="text" id="prod-img-url-3" class="form-control" placeholder="Image URL / Path 3" style="font-size: 11px; margin-top: 6px; height: 32px;">
+              <div class="image-preview-box" id="prod-img-prev-3" style="width: 100%; height: 75px; margin-top: 8px;"></div>
+            </div>
+
+            <!-- Photo Slot 4 -->
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border: 1px solid var(--color-border-dark);">
+              <label style="font-size: 11px; color: var(--color-text-muted); font-weight: 500; margin-bottom: 6px; display: block;">Photo 4 (Gallery Close-up)</label>
+              <div class="file-upload-wrapper" style="width: 100%;">
+                <button type="button" class="btn-file-upload" style="font-size: 10px; padding: 6px 10px;">Upload Photo 4</button>
+                <input type="file" id="prod-img-file-4" class="file-upload-input" accept="image/*">
+              </div>
+              <input type="text" id="prod-img-url-4" class="form-control" placeholder="Image URL / Path 4" style="font-size: 11px; margin-top: 6px; height: 32px;">
+              <div class="image-preview-box" id="prod-img-prev-4" style="width: 100%; height: 75px; margin-top: 8px;"></div>
+            </div>
+
           </div>
         </div>
 
