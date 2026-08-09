@@ -724,6 +724,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         console.warn("Vercel serverless environment variables fetch bypassed:", err);
       }
+    }
+
     // Fetch cloud settings (WhatsApp phone, social media links, hero banner)
     await fetchCloudSettings();
     initSocialLinks();
